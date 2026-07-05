@@ -1,0 +1,14 @@
+{
+  "name": "CapsuleW — Travel Wardrobe",
+  "short_name": "CapsuleW",
+  "description": "Your travel capsule wardrobe: photo-parsed inventory, outfit matching, laundry countdown, and shopping insights.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#faf8f5",
+  "theme_color": "#b0764a",
+  "icons": [
+    { "src": "icon.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

@@ -2,8 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>CapsuleW — Travel Wardrobe</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="CapsuleW">
+<meta name="theme-color" content="#faf8f5">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.png">
 <style>
   :root {
     --bg: #faf8f5;
@@ -352,11 +359,17 @@
   <div class="modal">
     <h2>Settings</h2>
     <div class="field">
-      <label>Anthropic API key — powers automatic photo analysis</label>
-      <input type="password" id="f-apikey" placeholder="sk-ant-...">
-      <div class="section-note" style="margin-top:8px">
-        The key is stored only on this device and sent only to Anthropic when analyzing your photos.
-        Get one at <b>console.anthropic.com</b> → API keys. Each photo costs roughly a cent to analyze.
+      <label>AI model for photo analysis</label>
+      <select id="f-model" style="width:100%" onchange="modelChanged()"></select>
+      <div class="section-note" id="f-modelnote" style="margin-top:6px"></div>
+    </div>
+    <div class="field">
+      <label id="f-keylabel">API key</label>
+      <input type="password" id="f-apikey" placeholder="">
+      <div class="section-note" id="f-keynote" style="margin-top:8px"></div>
+      <div class="section-note">
+        Keys are stored only on this device and sent only to the model's provider when analyzing your photos.
+        You only need a key for the model you choose.
       </div>
     </div>
     <div class="modal-actions">
@@ -994,21 +1007,82 @@ function loadSample() {
   toast('Sample wardrobe loaded — explore the tabs!');
 }
 
-/* ================= SETTINGS ================= */
+/* ================= SETTINGS: MODEL CHOICE + KEYS ================= */
 
-const API_KEY_LS = 'capsulew-apikey';
-function getApiKey() { return localStorage.getItem(API_KEY_LS) || ''; }
+const MODELS = [
+  { id: 'claude-haiku-4-5', provider: 'anthropic', label: 'Claude Haiku 4.5 — fast & affordable (recommended)',
+    note: 'A fraction of a cent per photo. Great accuracy for this task.' },
+  { id: 'gpt-4o-mini', provider: 'openai', label: 'OpenAI GPT-4o mini — lowest cost',
+    note: 'A fraction of a cent per photo.' },
+  { id: 'gemini-2.5-flash', provider: 'google', label: 'Google Gemini 2.5 Flash — fast & affordable',
+    note: 'A fraction of a cent per photo. Google AI Studio includes a free tier.' },
+  { id: 'claude-opus-4-8', provider: 'anthropic', label: 'Claude Opus 4.8 — highest quality (premium)',
+    note: 'Roughly a cent per photo. Best for tricky photos (patterns, layered garments).' },
+];
+const PROVIDERS = {
+  anthropic: { label: 'Anthropic', hint: 'sk-ant-...', where: 'console.anthropic.com → API keys' },
+  openai:    { label: 'OpenAI',    hint: 'sk-...',     where: 'platform.openai.com → API keys' },
+  google:    { label: 'Google',    hint: 'AIza...',    where: 'aistudio.google.com → Get API key (free tier available)' },
+};
+const MODEL_LS = 'capsulew-model';
+
+function currentModel() {
+  const id = localStorage.getItem(MODEL_LS);
+  return MODELS.find(m => m.id === id) || MODELS[0];
+}
+function keyLs(provider) { return 'capsulew-key-' + provider; }
+function getApiKey(provider) {
+  return localStorage.getItem(keyLs(provider || currentModel().provider)) || '';
+}
+
+/* one-time migration from the old single-key storage */
+(function migrateKey() {
+  const old = localStorage.getItem('capsulew-apikey');
+  if (old) {
+    localStorage.setItem(keyLs('anthropic'), old);
+    localStorage.removeItem('capsulew-apikey');
+  }
+})();
+
+let settingsKeyDraft = {};   // unsaved key text per provider while the modal is open
+let settingsPrevProvider = null;
+
 function openSettings() {
-  document.getElementById('f-apikey').value = getApiKey();
+  const sel = document.getElementById('f-model');
+  sel.innerHTML = MODELS.map(m => `<option value="${m.id}">${m.label}</option>`).join('');
+  sel.value = currentModel().id;
+  settingsKeyDraft = {};
+  settingsPrevProvider = null;
+  modelChanged();
   document.getElementById('settingsModalBg').classList.add('open');
 }
 function closeSettings() { document.getElementById('settingsModalBg').classList.remove('open'); }
+
+function modelChanged() {
+  const model = MODELS.find(m => m.id === document.getElementById('f-model').value);
+  const prov = PROVIDERS[model.provider];
+  const input = document.getElementById('f-apikey');
+  if (settingsPrevProvider && settingsPrevProvider !== model.provider) {
+    settingsKeyDraft[settingsPrevProvider] = input.value;
+  }
+  settingsPrevProvider = model.provider;
+  input.value = settingsKeyDraft[model.provider] ?? getApiKey(model.provider);
+  input.placeholder = prov.hint;
+  document.getElementById('f-modelnote').textContent = model.note;
+  document.getElementById('f-keylabel').textContent = `${prov.label} API key`;
+  document.getElementById('f-keynote').innerHTML = `Get one at <b>${prov.where}</b>.`;
+}
+
 function saveSettings() {
-  const key = document.getElementById('f-apikey').value.trim();
-  if (key) localStorage.setItem(API_KEY_LS, key);
-  else localStorage.removeItem(API_KEY_LS);
+  const model = MODELS.find(m => m.id === document.getElementById('f-model').value);
+  localStorage.setItem(MODEL_LS, model.id);
+  settingsKeyDraft[model.provider] = document.getElementById('f-apikey').value.trim();
+  for (const [prov, key] of Object.entries(settingsKeyDraft)) {
+    if (key) localStorage.setItem(keyLs(prov), key);
+    else if (key === '') localStorage.removeItem(keyLs(prov));
+  }
   closeSettings();
-  toast(key ? 'API key saved — photo analysis is on ✨' : 'API key removed');
+  toast(getApiKey() ? `Photo analysis is on — using ${model.label.split(' — ')[0]} ✨` : 'Saved. Add an API key to enable photo analysis.');
 }
 
 /* ================= PHOTO ANALYSIS (Claude vision) ================= */
@@ -1046,11 +1120,51 @@ const PARSE_SCHEMA = {
   additionalProperties: false,
 };
 
+const PARSE_PROMPT =
+  'Catalog the single main clothing item in this photo for a travel capsule wardrobe. ' +
+  'Ignore backgrounds, hangers, and people. Pick colors from the allowed list that best match ' +
+  'the garment (denim for jean fabric, cream/beige for off-whites). For styles, include every ' +
+  'context the piece genuinely works in: casual (everyday), smart (office/dinner), sport (workout), ' +
+  'beach (hot weather/swim), evening (dressy nights out). ' +
+  'wearsPerWash is the typical number of wears before washing: tops/dresses 1-3, bottoms 3-7, ' +
+  'outerwear 10-20, shoes/accessories 20-30.';
+
+/* Gemini uses an OpenAPI-style schema rather than JSON Schema */
+const GEMINI_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    name: { type: 'STRING' },
+    category: { type: 'STRING', enum: CATEGORIES.map(c => c.id) },
+    colors: { type: 'ARRAY', items: { type: 'STRING', enum: COLORS.map(c => c.id) } },
+    styles: { type: 'ARRAY', items: { type: 'STRING', enum: STYLES } },
+    wearsPerWash: { type: 'INTEGER' },
+  },
+  required: ['name', 'category', 'colors', 'styles', 'wearsPerWash'],
+};
+
+async function apiError(res, provider) {
+  let msg = `${provider} error ${res.status}`;
+  try {
+    const j = await res.json();
+    msg = j.error?.message || j.error?.type || msg;
+  } catch (e) {}
+  if (res.status === 401 || res.status === 403) msg = `Invalid ${provider} API key — check ⚙️ Settings`;
+  if (res.status === 429) msg = `${provider} rate limit reached — wait a moment and retry`;
+  return msg;
+}
+
 async function analyzePhoto(dataUrl) {
-  const key = getApiKey();
+  const model = currentModel();
+  const key = getApiKey(model.provider);
   if (!key) throw new Error('no-key');
   const [meta, b64] = dataUrl.split(',');
   const mediaType = meta.match(/data:(.*?);/)[1];
+  if (model.provider === 'anthropic') return analyzeAnthropic(model.id, key, mediaType, b64);
+  if (model.provider === 'openai') return analyzeOpenAI(model.id, key, dataUrl);
+  return analyzeGemini(model.id, key, mediaType, b64);
+}
+
+async function analyzeAnthropic(model, key, mediaType, b64) {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -1060,32 +1174,73 @@ async function analyzePhoto(dataUrl) {
       'anthropic-dangerous-direct-browser-access': 'true',
     },
     body: JSON.stringify({
-      model: 'claude-opus-4-8',
+      model,
       max_tokens: 1024,
       output_config: { format: { type: 'json_schema', schema: PARSE_SCHEMA } },
       messages: [{
         role: 'user',
         content: [
           { type: 'image', source: { type: 'base64', media_type: mediaType, data: b64 } },
-          { type: 'text', text:
-            'Catalog the single main clothing item in this photo for a travel capsule wardrobe. ' +
-            'Ignore backgrounds, hangers, and people. Pick colors from the allowed list that best match ' +
-            'the garment (denim for jean fabric, cream/beige for off-whites). For styles, include every ' +
-            'context the piece genuinely works in: casual (everyday), smart (office/dinner), sport (workout), ' +
-            'beach (hot weather/swim), evening (dressy nights out).' },
+          { type: 'text', text: PARSE_PROMPT },
         ],
       }],
     }),
   });
-  if (!res.ok) {
-    let msg = `API error ${res.status}`;
-    try { msg = (await res.json()).error?.message || msg; } catch (e) {}
-    if (res.status === 401) msg = 'Invalid API key — check Settings';
-    throw new Error(msg);
-  }
+  if (!res.ok) throw new Error(await apiError(res, 'Anthropic'));
   const data = await res.json();
   if (data.stop_reason === 'refusal') throw new Error('The photo could not be analyzed');
   const text = data.content.find(b => b.type === 'text')?.text;
+  if (!text) throw new Error('Empty response');
+  return JSON.parse(text);
+}
+
+async function analyzeOpenAI(model, key, dataUrl) {
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'authorization': 'Bearer ' + key },
+    body: JSON.stringify({
+      model,
+      max_tokens: 1024,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image_url', image_url: { url: dataUrl } },
+          { type: 'text', text: PARSE_PROMPT },
+        ],
+      }],
+      response_format: {
+        type: 'json_schema',
+        json_schema: { name: 'garment', strict: true, schema: PARSE_SCHEMA },
+      },
+    }),
+  });
+  if (!res.ok) throw new Error(await apiError(res, 'OpenAI'));
+  const data = await res.json();
+  const text = data.choices?.[0]?.message?.content;
+  if (!text) throw new Error('Empty response');
+  return JSON.parse(text);
+}
+
+async function analyzeGemini(model, key, mediaType, b64) {
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
+    body: JSON.stringify({
+      contents: [{
+        parts: [
+          { inline_data: { mime_type: mediaType, data: b64 } },
+          { text: PARSE_PROMPT },
+        ],
+      }],
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: GEMINI_SCHEMA,
+      },
+    }),
+  });
+  if (!res.ok) throw new Error(await apiError(res, 'Google'));
+  const data = await res.json();
+  const text = (data.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('');
   if (!text) throw new Error('Empty response');
   return JSON.parse(text);
 }
