@@ -157,6 +157,29 @@
   .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
 
   .insight-block { margin-bottom: 22px; }
+
+  /* Photos */
+  .item-photo {
+    width: 100%; height: 140px; object-fit: cover; border-radius: 10px;
+    margin-bottom: 8px; background: var(--chip); display: block;
+  }
+  .photo-drop {
+    border: 1.5px dashed var(--line); border-radius: 12px; padding: 14px;
+    text-align: center; cursor: pointer; background: var(--chip);
+    transition: border-color .15s ease;
+  }
+  .photo-drop:hover { border-color: var(--accent); }
+  .photo-drop img { max-height: 160px; max-width: 100%; border-radius: 8px; }
+  .parse-status { font-size: .8rem; margin-top: 8px; }
+  .parse-status.working { color: var(--warn); }
+  .parse-status.ok { color: var(--good); }
+  .parse-status.err { color: var(--bad); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    display: inline-block; width: 12px; height: 12px; border: 2px solid var(--warn);
+    border-top-color: transparent; border-radius: 50%; animation: spin .8s linear infinite;
+    vertical-align: -2px; margin-right: 5px;
+  }
   .suggestion {
     display: flex; gap: 12px; align-items: flex-start; background: var(--card);
     border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow);
@@ -184,6 +207,7 @@
   <div class="header-actions">
     <button class="btn small ghost" onclick="exportData()">Export</button>
     <button class="btn small ghost" onclick="document.getElementById('importFile').click()">Import</button>
+    <button class="btn small ghost" onclick="openSettings()" title="Settings">⚙️</button>
     <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
   </div>
 </header>
@@ -193,7 +217,9 @@
   <section id="tab-wardrobe" class="tab active">
     <div class="statrow" id="wardrobeStats"></div>
     <div class="toolbar">
-      <button class="btn primary" onclick="openItemModal()">+ Add item</button>
+      <button class="btn primary" onclick="startBulkImport()">📷 Add from photos</button>
+      <button class="btn" onclick="openItemModal()">+ Add manually</button>
+      <input type="file" id="bulkPhotos" accept="image/*" multiple style="display:none" onchange="bulkImport(event)">
       <select id="filterCat" onchange="renderWardrobe()">
         <option value="">All categories</option>
       </select>
@@ -204,19 +230,26 @@
         <option value="dirty">Needs washing</option>
       </select>
     </div>
+    <div id="bulkStatus"></div>
     <div class="grid" id="wardrobeGrid"></div>
     <div class="empty" id="wardrobeEmpty" style="display:none">
       Your wardrobe is empty.<br><br>
-      <button class="btn primary" onclick="openItemModal()">Add your first item</button>
-      &nbsp;or&nbsp;
-      <button class="btn" onclick="loadSample()">Load a sample wardrobe to explore</button>
+      <button class="btn primary" onclick="startBulkImport()">📷 Snap or pick photos of your clothes</button><br><br>
+      Every photo is analyzed automatically — category, colors, style, wash needs.<br><br>
+      <button class="btn small" onclick="openItemModal()">Add manually instead</button>
+      &nbsp;
+      <button class="btn small" onclick="loadSample()">Load a sample wardrobe</button>
     </div>
   </section>
 
   <!-- ====== OUTFITS ====== -->
   <section id="tab-outfits" class="tab">
     <h2>Outfit combinations</h2>
-    <p class="sub">Every wearable pairing in your wardrobe, matched by color and style. Tap <b>Wear today</b> to log wears on every piece at once.</p>
+    <p class="sub">Every wearable pairing in your wardrobe, matched by color and style. Or skip the browsing entirely:</p>
+    <div class="toolbar">
+      <button class="btn primary" onclick="dressMe()">✨ Dress me today</button>
+    </div>
+    <div id="dressMeResult"></div>
     <div class="toolbar">
       <select id="outfitStyle" onchange="renderOutfits()">
         <option value="">Any style</option>
@@ -278,6 +311,15 @@
   <div class="modal">
     <h2 id="itemModalTitle">Add item</h2>
     <div class="field">
+      <label>Photo</label>
+      <div class="photo-drop" id="photoDrop" onclick="document.getElementById('f-photo').click()">
+        <span id="photoDropText">📷 Tap to add a photo — everything below fills in automatically</span>
+        <img id="photoPreview" style="display:none">
+      </div>
+      <input type="file" id="f-photo" accept="image/*" style="display:none" onchange="photoPicked(event)">
+      <div class="parse-status" id="parseStatus"></div>
+    </div>
+    <div class="field">
       <label>Name</label>
       <input type="text" id="f-name" placeholder="e.g. White linen shirt">
     </div>
@@ -301,6 +343,25 @@
       <button class="btn danger" id="f-delete" style="display:none;margin-right:auto" onclick="deleteItem()">Delete</button>
       <button class="btn ghost" onclick="closeItemModal()">Cancel</button>
       <button class="btn primary" onclick="saveItem()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== SETTINGS MODAL ====== -->
+<div class="modal-bg" id="settingsModalBg" onclick="if(event.target===this) closeSettings()">
+  <div class="modal">
+    <h2>Settings</h2>
+    <div class="field">
+      <label>Anthropic API key — powers automatic photo analysis</label>
+      <input type="password" id="f-apikey" placeholder="sk-ant-...">
+      <div class="section-note" style="margin-top:8px">
+        The key is stored only on this device and sent only to Anthropic when analyzing your photos.
+        Get one at <b>console.anthropic.com</b> → API keys. Each photo costs roughly a cent to analyze.
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeSettings()">Cancel</button>
+      <button class="btn primary" onclick="saveSettings()">Save</button>
     </div>
   </div>
 </div>
@@ -607,6 +668,7 @@ function itemCardHtml(item, opts = {}) {
   const wears = totalWears(item);
   return `
   <div class="card">
+    ${item.photo ? `<img class="item-photo" src="${item.photo}" alt="">` : ''}
     <h3><span>${cat.emoji}</span> ${esc(item.name)} ${swatchesHtml(item)}</h3>
     <div class="meta">${cat.label} · ${item.styles.map(esc).join(', ')}</div>
     <div class="chips">
@@ -665,7 +727,9 @@ function renderOutfits() {
   }
   list.innerHTML = outfits.map((o, idx) => {
     const pieces = o.core.map(c =>
-      `<span class="piece ${wearsLeft(c) === 0 ? 'dirty' : ''}"><span class="emoji">${catOf(c).emoji}</span>${esc(c.name)} ${swatchesHtml(c)}</span>`
+      `<span class="piece ${wearsLeft(c) === 0 ? 'dirty' : ''}">${c.photo
+        ? `<img src="${c.photo}" style="width:26px;height:26px;object-fit:cover;border-radius:6px">`
+        : `<span class="emoji">${catOf(c).emoji}</span>`}${esc(c.name)} ${swatchesHtml(c)}</span>`
     ).join('<span class="plus">+</span>');
     const shoesTxt = o.shoes.length ? `<span class="chip good">👟 ${o.shoes.map(s => esc(s.name)).join(' / ')}</span>` : '';
     const outerTxt = o.outer.length ? `<span class="chip">🧥 ${o.outer.map(s => esc(s.name)).join(' / ')}</span>` : '';
@@ -831,6 +895,14 @@ function openItemModal(id) {
     ? { category: item.category, colors: item.colors.slice(), styles: item.styles.slice() }
     : { category: 'top', colors: [], styles: ['casual'] };
   document.getElementById('f-wears').value = item ? item.wearsPerWash : catOf({ category: picked.category }).defaultWears;
+  pendingPhoto = item ? item.photo || null : null;
+  const preview = document.getElementById('photoPreview');
+  preview.src = pendingPhoto || '';
+  preview.style.display = pendingPhoto ? '' : 'none';
+  document.getElementById('photoDropText').style.display = pendingPhoto ? 'none' : '';
+  const status = document.getElementById('parseStatus');
+  status.className = 'parse-status';
+  status.textContent = '';
   refreshPickers();
   document.getElementById('itemModalBg').classList.add('open');
   document.getElementById('f-name').focus();
@@ -845,12 +917,13 @@ function saveItem() {
   const wears = Math.max(1, parseInt(document.getElementById('f-wears').value, 10) || 1);
   if (editingId) {
     const item = state.items.find(x => x.id === editingId);
-    Object.assign(item, { name, category: picked.category, colors: picked.colors.slice(), styles: picked.styles.slice(), wearsPerWash: wears });
+    Object.assign(item, { name, category: picked.category, colors: picked.colors.slice(), styles: picked.styles.slice(), wearsPerWash: wears, photo: pendingPhoto || item.photo || null });
   } else {
     state.items.push({
       id: uid(), name, category: picked.category,
       colors: picked.colors.slice(), styles: picked.styles.slice(),
       wearsPerWash: wears, currentWears: 0, wearHistory: [],
+      photo: pendingPhoto || null,
       createdAt: new Date().toISOString(),
     });
   }
@@ -919,6 +992,256 @@ function loadSample() {
   ];
   save(); renderAll();
   toast('Sample wardrobe loaded — explore the tabs!');
+}
+
+/* ================= SETTINGS ================= */
+
+const API_KEY_LS = 'capsulew-apikey';
+function getApiKey() { return localStorage.getItem(API_KEY_LS) || ''; }
+function openSettings() {
+  document.getElementById('f-apikey').value = getApiKey();
+  document.getElementById('settingsModalBg').classList.add('open');
+}
+function closeSettings() { document.getElementById('settingsModalBg').classList.remove('open'); }
+function saveSettings() {
+  const key = document.getElementById('f-apikey').value.trim();
+  if (key) localStorage.setItem(API_KEY_LS, key);
+  else localStorage.removeItem(API_KEY_LS);
+  closeSettings();
+  toast(key ? 'API key saved — photo analysis is on ✨' : 'API key removed');
+}
+
+/* ================= PHOTO ANALYSIS (Claude vision) ================= */
+
+function resizeImage(file, maxDim, quality) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(img.src);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => { URL.revokeObjectURL(img.src); reject(new Error('bad image')); };
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+const PARSE_SCHEMA = {
+  type: 'object',
+  properties: {
+    name: { type: 'string', description: 'Short descriptive name, e.g. "White linen shirt"' },
+    category: { type: 'string', enum: CATEGORIES.map(c => c.id) },
+    colors: { type: 'array', items: { type: 'string', enum: COLORS.map(c => c.id) },
+      description: 'Main colors of the garment, most dominant first (1-3)' },
+    styles: { type: 'array', items: { type: 'string', enum: STYLES },
+      description: 'Every style context this piece genuinely works for' },
+    wearsPerWash: { type: 'integer',
+      description: 'Typical wears before washing, judged from garment type and fabric. Tops/dresses 1-3, bottoms 3-7, outerwear 10-20, shoes/accessories 20-30' },
+  },
+  required: ['name', 'category', 'colors', 'styles', 'wearsPerWash'],
+  additionalProperties: false,
+};
+
+async function analyzePhoto(dataUrl) {
+  const key = getApiKey();
+  if (!key) throw new Error('no-key');
+  const [meta, b64] = dataUrl.split(',');
+  const mediaType = meta.match(/data:(.*?);/)[1];
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: 'claude-opus-4-8',
+      max_tokens: 1024,
+      output_config: { format: { type: 'json_schema', schema: PARSE_SCHEMA } },
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: mediaType, data: b64 } },
+          { type: 'text', text:
+            'Catalog the single main clothing item in this photo for a travel capsule wardrobe. ' +
+            'Ignore backgrounds, hangers, and people. Pick colors from the allowed list that best match ' +
+            'the garment (denim for jean fabric, cream/beige for off-whites). For styles, include every ' +
+            'context the piece genuinely works in: casual (everyday), smart (office/dinner), sport (workout), ' +
+            'beach (hot weather/swim), evening (dressy nights out).' },
+        ],
+      }],
+    }),
+  });
+  if (!res.ok) {
+    let msg = `API error ${res.status}`;
+    try { msg = (await res.json()).error?.message || msg; } catch (e) {}
+    if (res.status === 401) msg = 'Invalid API key — check Settings';
+    throw new Error(msg);
+  }
+  const data = await res.json();
+  if (data.stop_reason === 'refusal') throw new Error('The photo could not be analyzed');
+  const text = data.content.find(b => b.type === 'text')?.text;
+  if (!text) throw new Error('Empty response');
+  return JSON.parse(text);
+}
+
+function itemFromParse(parsed, photo) {
+  return {
+    id: uid(),
+    name: parsed.name || 'Clothing item',
+    category: CATEGORIES.some(c => c.id === parsed.category) ? parsed.category : 'top',
+    colors: (parsed.colors || []).filter(c => colorOf(c)).slice(0, 3),
+    styles: (parsed.styles || []).filter(s => STYLES.includes(s)),
+    wearsPerWash: Math.min(40, Math.max(1, parsed.wearsPerWash || 2)),
+    currentWears: 0, wearHistory: [], photo,
+    createdAt: new Date().toISOString(),
+  };
+}
+
+/* ---- Single photo inside the Add/Edit modal ---- */
+
+let pendingPhoto = null;
+
+async function photoPicked(ev) {
+  const file = ev.target.files[0];
+  ev.target.value = '';
+  if (!file) return;
+  const status = document.getElementById('parseStatus');
+  try {
+    pendingPhoto = await resizeImage(file, 320, 0.7);
+    const preview = document.getElementById('photoPreview');
+    preview.src = pendingPhoto;
+    preview.style.display = '';
+    document.getElementById('photoDropText').style.display = 'none';
+  } catch (e) {
+    status.className = 'parse-status err';
+    status.textContent = 'Could not read that image.';
+    return;
+  }
+  if (!getApiKey()) {
+    status.className = 'parse-status';
+    status.innerHTML = 'Photo attached. Add your API key in <b>⚙️ Settings</b> to have the fields fill in automatically.';
+    return;
+  }
+  status.className = 'parse-status working';
+  status.innerHTML = '<span class="spinner"></span>Analyzing photo…';
+  try {
+    const apiImage = await resizeImage(file, 768, 0.8);
+    const parsed = await analyzePhoto(apiImage);
+    document.getElementById('f-name').value = parsed.name || '';
+    picked.category = CATEGORIES.some(c => c.id === parsed.category) ? parsed.category : picked.category;
+    picked.colors = (parsed.colors || []).filter(c => colorOf(c)).slice(0, 3);
+    picked.styles = (parsed.styles || []).filter(s => STYLES.includes(s));
+    document.getElementById('f-wears').value = Math.min(40, Math.max(1, parsed.wearsPerWash || 2));
+    refreshPickers();
+    status.className = 'parse-status ok';
+    status.textContent = '✓ Analyzed — review below and save.';
+  } catch (e) {
+    status.className = 'parse-status err';
+    status.textContent = '⚠ ' + e.message + ' — you can still fill the fields manually.';
+  }
+}
+
+/* ---- Bulk import: many photos → whole wardrobe, zero forms ---- */
+
+function startBulkImport() {
+  if (!getApiKey()) {
+    toast('First add your API key so photos can be analyzed');
+    openSettings();
+    return;
+  }
+  document.getElementById('bulkPhotos').click();
+}
+
+let bulkRunning = false;
+
+async function bulkImport(ev) {
+  const files = [...ev.target.files];
+  ev.target.value = '';
+  if (!files.length || bulkRunning) return;
+  bulkRunning = true;
+  const box = document.getElementById('bulkStatus');
+  let done = 0, failed = 0;
+  const failures = [];
+  for (const file of files) {
+    box.innerHTML = `<div class="card" style="margin-bottom:12px"><span class="spinner"></span>
+      Analyzing photo ${done + failed + 1} of ${files.length}… <b>${done}</b> added${failed ? `, ${failed} skipped` : ''}</div>`;
+    try {
+      const [photo, apiImage] = await Promise.all([
+        resizeImage(file, 320, 0.7),
+        resizeImage(file, 768, 0.8),
+      ]);
+      const parsed = await analyzePhoto(apiImage);
+      state.items.push(itemFromParse(parsed, photo));
+      save();
+      done++;
+      renderWardrobe();
+    } catch (e) {
+      failed++;
+      failures.push(`${file.name}: ${e.message}`);
+    }
+  }
+  bulkRunning = false;
+  box.innerHTML = `<div class="card" style="margin-bottom:12px">
+    ✅ Added <b>${done}</b> item${done === 1 ? '' : 's'} from your photos${failed ? ` — ${failed} photo${failed === 1 ? '' : 's'} skipped (${esc(failures[0])})` : ''}.
+    <button class="btn small ghost" onclick="document.getElementById('bulkStatus').innerHTML=''" style="margin-left:8px">Dismiss</button>
+  </div>`;
+  renderAll();
+  toast(done ? `Wardrobe updated — ${generateOutfits().length} outfits possible ✨` : 'No items could be added');
+}
+
+/* ================= DRESS ME ================= */
+
+/* Pick the best outfit automatically: fully clean, favoring pieces worn least
+   so the whole wardrobe gets used evenly, and log it in one tap. */
+function dressMe() {
+  const outfits = generateOutfits().filter(o => o.core.every(c => wearsLeft(c) > 0));
+  const box = document.getElementById('dressMeResult');
+  if (!outfits.length) {
+    box.innerHTML = `<div class="empty">No fully clean outfit available — check the Laundry tab. 🧺</div>`;
+    return;
+  }
+  // score: fewer lifetime wears = better (rotates underused pieces in), small bonus for clean headroom
+  outfits.sort((a, b) => {
+    const wearsA = a.core.reduce((s, c) => s + totalWears(c), 0) / a.core.length;
+    const wearsB = b.core.reduce((s, c) => s + totalWears(c), 0) / b.core.length;
+    if (wearsA !== wearsB) return wearsA - wearsB;
+    return Math.min(...b.core.map(wearsLeft)) - Math.min(...a.core.map(wearsLeft));
+  });
+  const o = outfits[0];
+  o.core.forEach(c => {
+    c.currentWears = (c.currentWears || 0) + 1;
+    (c.wearHistory = c.wearHistory || []).push(today());
+  });
+  save();
+  const pieces = o.core.map(c =>
+    `<span class="piece">${c.photo ? `<img src="${c.photo}" style="width:26px;height:26px;object-fit:cover;border-radius:6px">` : `<span class="emoji">${catOf(c).emoji}</span>`}${esc(c.name)}</span>`
+  ).join('<span class="plus">+</span>');
+  const shoesTxt = o.shoes.length ? ` with <b>${esc(o.shoes[0].name)}</b>` : '';
+  const outerTxt = o.outer.length ? ` — grab the <b>${esc(o.outer[0].name)}</b> if it's chilly` : '';
+  box.innerHTML = `<div class="card" style="margin-bottom:12px">
+    <div class="pieces" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">${pieces}</div>
+    <div class="section-note">Picked to rotate your least-worn pieces${shoesTxt}${outerTxt}. Already logged as worn today ✓</div>
+    <button class="btn small ghost" onclick="undoDressMe('${o.core.map(c => c.id).join(',')}')">Undo</button>
+  </div>`;
+  renderWardrobe(); renderLaundry(); renderInsights();
+  toast('Outfit picked and logged — have a great day ✨');
+}
+
+function undoDressMe(ids) {
+  ids.split(',').forEach(id => {
+    const i = state.items.find(x => x.id === id);
+    if (i && i.currentWears > 0) { i.currentWears--; i.wearHistory.pop(); }
+  });
+  save();
+  document.getElementById('dressMeResult').innerHTML = '';
+  renderAll();
+  toast('Undone');
 }
 
 /* ================= BOOT ================= */

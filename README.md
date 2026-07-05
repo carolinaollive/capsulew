@@ -4,7 +4,11 @@ A travel wardrobe companion for people who live out of a suitcase. Track every p
 
 ## What it does
 
-**👗 Wardrobe** — Your inventory. Each item has a category, colors, style tags (casual / smart / sport / beach / evening), and how many wears it survives before washing. Log a wear or a wash with one tap.
+**📷 Fully automated inventory** — Snap or select photos of your clothes (a whole batch at once). Each photo is analyzed by Claude vision: name, category, colors, styles, and how many wears it survives before washing are all filled in automatically — no forms. Requires an Anthropic API key (⚙️ Settings; stored only on your device, roughly a cent per photo).
+
+**✨ Dress me today** — One tap picks the best fully-clean outfit, favoring your least-worn pieces so the whole wardrobe rotates evenly, and logs the wear automatically.
+
+**👗 Wardrobe** — Your inventory with photos. Each item has a category, colors, style tags (casual / smart / sport / beach / evening), and how many wears it survives before washing. Log a wear or a wash with one tap (or add items manually if you prefer).
 
 **✨ Outfits** — Every wearable combination is generated automatically by matching colors (neutrals bridge everything; color families and classic harmonies pair the rest) and overlapping styles. Tap **Wear today** to log wear on every piece of an outfit at once. Filter by style or by "clean pieces only".
 
