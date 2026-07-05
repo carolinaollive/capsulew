@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CapsuleW — Travel Wardrobe</title>
+<style>
+  :root {
+    --bg: #faf8f5;
+    --card: #ffffff;
+    --ink: #2b2620;
+    --ink-soft: #7a7268;
+    --line: #e8e2d9;
+    --accent: #b0764a;
+    --accent-ink: #ffffff;
+    --good: #4a7c59;
+    --warn: #c98a2b;
+    --bad: #b0503f;
+    --chip: #f1ece4;
+    --radius: 14px;
+    --shadow: 0 1px 3px rgba(43,38,32,.07), 0 4px 14px rgba(43,38,32,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #191713;
+      --card: #23201b;
+      --ink: #ece7df;
+      --ink-soft: #a49a8d;
+      --line: #383329;
+      --accent: #c98a5b;
+      --accent-ink: #1c150e;
+      --good: #7fb08d;
+      --warn: #d9a959;
+      --bad: #d07a68;
+      --chip: #2e2a23;
+      --shadow: 0 1px 3px rgba(0,0,0,.3);
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg); color: var(--ink);
+    min-height: 100vh; padding-bottom: 90px;
+  }
+  header {
+    padding: 22px 18px 10px; max-width: 980px; margin: 0 auto;
+    display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  }
+  header h1 { font-size: 1.45rem; letter-spacing: -.02em; }
+  header h1 span { color: var(--accent); }
+  .header-actions { display: flex; gap: 8px; }
+  main { max-width: 980px; margin: 0 auto; padding: 8px 18px; }
+
+  /* Tabs */
+  nav {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 40;
+    background: var(--card); border-top: 1px solid var(--line);
+    display: flex; justify-content: center; gap: 4px; padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+  }
+  nav button {
+    flex: 1; max-width: 180px; border: none; background: none; color: var(--ink-soft);
+    font-size: .78rem; padding: 8px 4px; border-radius: 10px; cursor: pointer; line-height: 1.2;
+  }
+  nav button .ico { display: block; font-size: 1.25rem; margin-bottom: 2px; }
+  nav button.active { color: var(--accent); background: var(--chip); font-weight: 600; }
+
+  .tab { display: none; }
+  .tab.active { display: block; animation: fade .18s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
+
+  h2 { font-size: 1.1rem; margin: 18px 0 4px; }
+  .sub { color: var(--ink-soft); font-size: .85rem; margin-bottom: 14px; }
+
+  /* Buttons */
+  .btn {
+    border: 1px solid var(--line); background: var(--card); color: var(--ink);
+    padding: 8px 14px; border-radius: 999px; font-size: .85rem; cursor: pointer;
+    transition: transform .06s ease; box-shadow: var(--shadow);
+  }
+  .btn:active { transform: scale(.97); }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+  .btn.small { padding: 5px 11px; font-size: .78rem; box-shadow: none; }
+  .btn.ghost { box-shadow: none; background: none; }
+  .btn.danger { color: var(--bad); border-color: var(--bad); }
+
+  /* Cards */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 14px; box-shadow: var(--shadow); position: relative;
+  }
+  .card h3 { font-size: .98rem; margin-bottom: 2px; display: flex; align-items: center; gap: 7px; }
+  .card .meta { color: var(--ink-soft); font-size: .78rem; margin-bottom: 8px; }
+  .swatches { display: inline-flex; gap: 3px; vertical-align: middle; }
+  .swatch { width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(0,0,0,.15); display: inline-block; }
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; margin: 6px 0; }
+  .chip { background: var(--chip); border-radius: 999px; padding: 2px 9px; font-size: .72rem; color: var(--ink-soft); }
+  .chip.good { color: var(--good); } .chip.warn { color: var(--warn); } .chip.bad { color: var(--bad); }
+
+  .wearbar { height: 6px; border-radius: 4px; background: var(--chip); overflow: hidden; margin: 8px 0 4px; }
+  .wearbar > div { height: 100%; border-radius: 4px; background: var(--good); transition: width .3s ease; }
+  .wearbar.mid > div { background: var(--warn); }
+  .wearbar.low > div { background: var(--bad); }
+  .wearlabel { font-size: .72rem; color: var(--ink-soft); margin-bottom: 8px; }
+  .card-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+
+  .bigstat {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 18px; text-align: center;
+  }
+  .bigstat .num { font-size: 2.3rem; font-weight: 700; letter-spacing: -.03em; }
+  .bigstat .lbl { color: var(--ink-soft); font-size: .8rem; margin-top: 2px; }
+  .statrow { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 14px 0; }
+
+  .outfit-card .pieces { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 8px 0; }
+  .piece {
+    display: inline-flex; align-items: center; gap: 6px; background: var(--chip);
+    border-radius: 10px; padding: 5px 10px; font-size: .8rem;
+  }
+  .piece .emoji { font-size: 1rem; }
+  .piece.dirty { opacity: .45; text-decoration: line-through; }
+  .plus { color: var(--ink-soft); font-size: .8rem; }
+
+  .empty {
+    border: 1.5px dashed var(--line); border-radius: var(--radius); padding: 28px 18px;
+    text-align: center; color: var(--ink-soft); font-size: .9rem; margin-top: 12px;
+  }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 12px 0; }
+  select, input[type=text], input[type=number], input[type=date] {
+    background: var(--card); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 10px; padding: 8px 10px; font-size: .88rem; font-family: inherit;
+  }
+
+  /* Modal */
+  .modal-bg {
+    display: none; position: fixed; inset: 0; background: rgba(20,16,10,.45);
+    z-index: 60; align-items: flex-end; justify-content: center;
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: var(--card); width: 100%; max-width: 560px; max-height: 88vh; overflow-y: auto;
+    border-radius: 18px 18px 0 0; padding: 20px 20px 30px; animation: up .2s ease;
+  }
+  @media (min-width: 620px) { .modal-bg { align-items: center; } .modal { border-radius: 18px; } }
+  @keyframes up { from { transform: translateY(30px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .modal h2 { margin-top: 0; }
+  .field { margin: 13px 0; }
+  .field label { display: block; font-size: .8rem; font-weight: 600; margin-bottom: 6px; color: var(--ink-soft); }
+  .field input[type=text], .field input[type=number], .field select { width: 100%; }
+  .pick-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pick {
+    border: 1.5px solid var(--line); background: var(--card); color: var(--ink);
+    border-radius: 999px; padding: 6px 12px; font-size: .8rem; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .pick.on { border-color: var(--accent); background: var(--chip); font-weight: 600; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+
+  .insight-block { margin-bottom: 22px; }
+  .suggestion {
+    display: flex; gap: 12px; align-items: flex-start; background: var(--card);
+    border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 14px; margin-bottom: 10px;
+  }
+  .suggestion .rank {
+    background: var(--accent); color: var(--accent-ink); font-weight: 700; border-radius: 10px;
+    min-width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; font-size: .95rem;
+  }
+  .suggestion .why { color: var(--ink-soft); font-size: .8rem; margin-top: 3px; }
+
+  .toast {
+    position: fixed; left: 50%; transform: translateX(-50%); bottom: 86px; z-index: 80;
+    background: var(--ink); color: var(--bg); padding: 10px 18px; border-radius: 999px;
+    font-size: .85rem; opacity: 0; pointer-events: none; transition: opacity .25s ease;
+  }
+  .toast.show { opacity: 1; }
+  .section-note { font-size: .8rem; color: var(--ink-soft); margin: 4px 0 10px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Capsule<span>W</span> <small style="font-size:.75rem;color:var(--ink-soft);font-weight:400">your travel wardrobe</small></h1>
+  <div class="header-actions">
+    <button class="btn small ghost" onclick="exportData()">Export</button>
+    <button class="btn small ghost" onclick="document.getElementById('importFile').click()">Import</button>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+  </div>
+</header>
+
+<main>
+  <!-- ====== WARDROBE ====== -->
+  <section id="tab-wardrobe" class="tab active">
+    <div class="statrow" id="wardrobeStats"></div>
+    <div class="toolbar">
+      <button class="btn primary" onclick="openItemModal()">+ Add item</button>
+      <select id="filterCat" onchange="renderWardrobe()">
+        <option value="">All categories</option>
+      </select>
+      <select id="sortBy" onchange="renderWardrobe()">
+        <option value="recent">Newest first</option>
+        <option value="wears">Most worn</option>
+        <option value="leastworn">Least worn</option>
+        <option value="dirty">Needs washing</option>
+      </select>
+    </div>
+    <div class="grid" id="wardrobeGrid"></div>
+    <div class="empty" id="wardrobeEmpty" style="display:none">
+      Your wardrobe is empty.<br><br>
+      <button class="btn primary" onclick="openItemModal()">Add your first item</button>
+      &nbsp;or&nbsp;
+      <button class="btn" onclick="loadSample()">Load a sample wardrobe to explore</button>
+    </div>
+  </section>
+
+  <!-- ====== OUTFITS ====== -->
+  <section id="tab-outfits" class="tab">
+    <h2>Outfit combinations</h2>
+    <p class="sub">Every wearable pairing in your wardrobe, matched by color and style. Tap <b>Wear today</b> to log wears on every piece at once.</p>
+    <div class="toolbar">
+      <select id="outfitStyle" onchange="renderOutfits()">
+        <option value="">Any style</option>
+      </select>
+      <label style="font-size:.82rem;color:var(--ink-soft);display:flex;align-items:center;gap:6px">
+        <input type="checkbox" id="cleanOnly" onchange="renderOutfits()"> Clean pieces only
+      </label>
+    </div>
+    <div id="outfitList"></div>
+  </section>
+
+  <!-- ====== LAUNDRY ====== -->
+  <section id="tab-laundry" class="tab">
+    <h2>Laundry runway</h2>
+    <p class="sub">How long you can keep dressing before you must find a washing machine.</p>
+    <div class="statrow" id="laundryStats"></div>
+    <div id="laundryDetail"></div>
+    <h2>Needs washing</h2>
+    <div class="grid" id="dirtyGrid"></div>
+    <div class="toolbar" style="margin-top:14px">
+      <button class="btn" onclick="washAll()">🫧 I did laundry — mark everything clean</button>
+    </div>
+  </section>
+
+  <!-- ====== INSIGHTS ====== -->
+  <section id="tab-insights" class="tab">
+    <div class="insight-block">
+      <h2>🛍️ Smart shopping list</h2>
+      <p class="sub">Pieces that would unlock the most new outfits from what you already own.</p>
+      <div id="shoppingList"></div>
+    </div>
+    <div class="insight-block">
+      <h2>🧩 Matches nothing</h2>
+      <p class="sub">These pieces can't form a single outfit with the rest of your wardrobe. Buy them a partner (see the shopping list) — or let them go.</p>
+      <div class="grid" id="orphanGrid"></div>
+    </div>
+    <div class="insight-block">
+      <h2>😴 Underused — wear it or donate it</h2>
+      <p class="sub">Items you've barely touched. If a piece keeps sitting here trip after trip, it's earning its weight in your luggage without paying rent.</p>
+      <div class="grid" id="underusedGrid"></div>
+    </div>
+    <div class="insight-block">
+      <h2>⭐ Your workhorses</h2>
+      <p class="sub">Most worn and most versatile — buy more like these.</p>
+      <div class="grid" id="starGrid"></div>
+    </div>
+  </section>
+</main>
+
+<nav>
+  <button id="nav-wardrobe" class="active" onclick="showTab('wardrobe')"><span class="ico">👗</span>Wardrobe</button>
+  <button id="nav-outfits" onclick="showTab('outfits')"><span class="ico">✨</span>Outfits</button>
+  <button id="nav-laundry" onclick="showTab('laundry')"><span class="ico">🧺</span>Laundry</button>
+  <button id="nav-insights" onclick="showTab('insights')"><span class="ico">💡</span>Insights</button>
+</nav>
+
+<!-- ====== ITEM MODAL ====== -->
+<div class="modal-bg" id="itemModalBg" onclick="if(event.target===this) closeItemModal()">
+  <div class="modal">
+    <h2 id="itemModalTitle">Add item</h2>
+    <div class="field">
+      <label>Name</label>
+      <input type="text" id="f-name" placeholder="e.g. White linen shirt">
+    </div>
+    <div class="field">
+      <label>Category</label>
+      <div class="pick-row" id="f-category"></div>
+    </div>
+    <div class="field">
+      <label>Colors (pick all that apply)</label>
+      <div class="pick-row" id="f-colors"></div>
+    </div>
+    <div class="field">
+      <label>Style (pick all that apply)</label>
+      <div class="pick-row" id="f-styles"></div>
+    </div>
+    <div class="field">
+      <label>Wears before it needs washing</label>
+      <input type="number" id="f-wears" min="1" max="60" value="2">
+    </div>
+    <div class="modal-actions">
+      <button class="btn danger" id="f-delete" style="display:none;margin-right:auto" onclick="deleteItem()">Delete</button>
+      <button class="btn ghost" onclick="closeItemModal()">Cancel</button>
+      <button class="btn primary" onclick="saveItem()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+/* ================= DATA MODEL ================= */
+
+const CATEGORIES = [
+  { id: 'top',       label: 'Top',       emoji: '👕', defaultWears: 2  },
+  { id: 'bottom',    label: 'Bottom',    emoji: '👖', defaultWears: 5  },
+  { id: 'dress',     label: 'Dress',     emoji: '👗', defaultWears: 2  },
+  { id: 'outerwear', label: 'Outerwear', emoji: '🧥', defaultWears: 15 },
+  { id: 'shoes',     label: 'Shoes',     emoji: '👟', defaultWears: 25 },
+  { id: 'accessory', label: 'Accessory', emoji: '🧣', defaultWears: 25 },
+];
+
+const COLORS = [
+  { id: 'black',   label: 'Black',      hex: '#1d1d1f', neutral: true },
+  { id: 'white',   label: 'White',      hex: '#f5f3ef', neutral: true },
+  { id: 'gray',    label: 'Gray',       hex: '#8e8e93', neutral: true },
+  { id: 'navy',    label: 'Navy',       hex: '#22304e', neutral: true },
+  { id: 'denim',   label: 'Denim',      hex: '#4a6a94', neutral: true },
+  { id: 'beige',   label: 'Beige/Tan',  hex: '#cbb494', neutral: true },
+  { id: 'cream',   label: 'Cream',      hex: '#efe6d0', neutral: true },
+  { id: 'brown',   label: 'Brown',      hex: '#6d4c33', neutral: true },
+  { id: 'khaki',   label: 'Khaki',      hex: '#8a7f57', neutral: true },
+  { id: 'blue',    label: 'Blue',       hex: '#2f6fd1', family: 'blue' },
+  { id: 'lightblue', label: 'Light blue', hex: '#9cc3e5', family: 'blue' },
+  { id: 'teal',    label: 'Teal',       hex: '#2a8a8a', family: 'blue' },
+  { id: 'red',     label: 'Red',        hex: '#c0392b', family: 'red' },
+  { id: 'burgundy', label: 'Burgundy',  hex: '#6e2431', family: 'red' },
+  { id: 'pink',    label: 'Pink',       hex: '#e28aa9', family: 'red' },
+  { id: 'orange',  label: 'Orange',     hex: '#e07b39', family: 'warm' },
+  { id: 'yellow',  label: 'Yellow',     hex: '#e8c34a', family: 'warm' },
+  { id: 'mustard', label: 'Mustard',    hex: '#c9972c', family: 'warm' },
+  { id: 'green',   label: 'Green',      hex: '#3d7a44', family: 'green' },
+  { id: 'olive',   label: 'Olive',      hex: '#6b7440', family: 'green' },
+  { id: 'purple',  label: 'Purple',     hex: '#7a4f9e', family: 'purple' },
+  { id: 'lavender', label: 'Lavender',  hex: '#b9a6d8', family: 'purple' },
+];
+
+/* Classic cross-family combinations that work even between two non-neutrals */
+const HARMONY_PAIRS = [
+  ['blue', 'warm'],    // blue + orange/yellow/mustard
+  ['red', 'green'],    // pink + olive, burgundy + green...
+  ['purple', 'warm'],  // purple + mustard
+];
+
+const STYLES = ['casual', 'smart', 'sport', 'beach', 'evening'];
+
+/* Which categories can be paired inside one outfit */
+const PAIRABLE = {
+  top:       ['bottom', 'shoes', 'outerwear', 'accessory'],
+  bottom:    ['top', 'shoes', 'outerwear', 'accessory'],
+  dress:     ['shoes', 'outerwear', 'accessory'],
+  shoes:     ['top', 'bottom', 'dress', 'outerwear', 'accessory'],
+  outerwear: ['top', 'bottom', 'dress', 'shoes', 'accessory'],
+  accessory: ['top', 'bottom', 'dress', 'shoes', 'outerwear'],
+};
+
+const LS_KEY = 'capsulew-data-v1';
+let state = { items: [] };
+
+function load() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) state = JSON.parse(raw);
+    if (!Array.isArray(state.items)) state.items = [];
+  } catch (e) { state = { items: [] }; }
+}
+function save() { localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+function uid() { return 'i' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+function catOf(item) { return CATEGORIES.find(c => c.id === item.category) || CATEGORIES[0]; }
+function colorOf(id) { return COLORS.find(c => c.id === id); }
+function today() { return new Date().toISOString().slice(0, 10); }
+
+/* ================= MATCHING ENGINE ================= */
+
+function colorsCompatible(idA, idB) {
+  const a = colorOf(idA), b = colorOf(idB);
+  if (!a || !b) return false;
+  if (a.neutral || b.neutral) return true;
+  if (a.family === b.family) return true;
+  return HARMONY_PAIRS.some(([f1, f2]) =>
+    (a.family === f1 && b.family === f2) || (a.family === f2 && b.family === f1));
+}
+
+function paletteCompatible(itemA, itemB) {
+  // Compatible if every color pairing across the two items works,
+  // OR both items contain at least one neutral (neutrals bridge anything).
+  const pairsOk = itemA.colors.every(ca => itemB.colors.every(cb => colorsCompatible(ca, cb)));
+  if (pairsOk) return true;
+  const aHasNeutral = itemA.colors.some(c => colorOf(c)?.neutral);
+  const bHasNeutral = itemB.colors.some(c => colorOf(c)?.neutral);
+  return aHasNeutral && bHasNeutral;
+}
+
+function stylesOverlap(a, b) {
+  return a.styles.some(s => b.styles.includes(s));
+}
+
+function itemsCompatible(a, b) {
+  if (a.id === b.id) return false;
+  if (!PAIRABLE[a.category]?.includes(b.category)) return false;
+  return stylesOverlap(a, b) && paletteCompatible(a, b);
+}
+
+/* Core outfits: top+bottom, or a dress. Shoes/layers attach when compatible with every core piece. */
+function generateOutfits() {
+  const items = state.items;
+  const tops = items.filter(i => i.category === 'top');
+  const bottoms = items.filter(i => i.category === 'bottom');
+  const dresses = items.filter(i => i.category === 'dress');
+  const shoes = items.filter(i => i.category === 'shoes');
+  const outer = items.filter(i => i.category === 'outerwear');
+  const outfits = [];
+
+  function extras(core) {
+    const fits = arr => arr.filter(x => core.every(c => itemsCompatible(c, x) || itemsCompatible(x, c)));
+    return { shoes: fits(shoes), outer: fits(outer) };
+  }
+
+  for (const t of tops) for (const b of bottoms) {
+    if (itemsCompatible(t, b)) {
+      const core = [t, b];
+      const ex = extras(core);
+      outfits.push({ core, styles: t.styles.filter(s => b.styles.includes(s)), ...ex });
+    }
+  }
+  for (const d of dresses) {
+    const core = [d];
+    const ex = extras(core);
+    outfits.push({ core, styles: d.styles.slice(), ...ex });
+  }
+  return outfits;
+}
+
+/* An item's "partners": every other item it can appear in an outfit with */
+function partnersOf(item) {
+  return state.items.filter(o => itemsCompatible(item, o));
+}
+
+/* Orphans: pieces that can't join any complete outfit.
+   Tops need ≥1 bottom; bottoms need ≥1 top; dresses are self-sufficient;
+   shoes/outerwear/accessories need ≥1 complete core outfit they fit. */
+function isOrphan(item) {
+  const p = partnersOf(item);
+  if (item.category === 'top') return !p.some(x => x.category === 'bottom');
+  if (item.category === 'bottom') return !p.some(x => x.category === 'top');
+  if (item.category === 'dress') return false;
+  // support pieces: orphan if they fit no core outfit at all
+  const outfits = generateOutfits();
+  return !outfits.some(o => o.core.every(c => itemsCompatible(c, item) || itemsCompatible(item, c)));
+}
+
+/* ================= LAUNDRY MATH ================= */
+
+function wearsLeft(item) {
+  return Math.max(0, (item.wearsPerWash || 1) - (item.currentWears || 0));
+}
+
+/* Simulate: how many more days can we dress in a complete outfit (core pieces only)
+   before something must be washed? Greedy: each day pick the core outfit whose
+   pieces have the most remaining wears. */
+function laundryRunwayDays() {
+  const budget = {};
+  state.items.forEach(i => budget[i.id] = wearsLeft(i));
+  const outfits = generateOutfits();
+  if (!outfits.length) return 0;
+  let days = 0;
+  while (days < 90) {
+    let best = null, bestScore = -1;
+    for (const o of outfits) {
+      const rem = o.core.map(c => budget[c.id]);
+      if (rem.some(r => r <= 0)) continue;
+      const score = Math.min(...rem) + rem.reduce((s, r) => s + r, 0) / 100;
+      if (score > bestScore) { bestScore = score; best = o; }
+    }
+    if (!best) break;
+    best.core.forEach(c => budget[c.id]--);
+    days++;
+  }
+  return days;
+}
+
+/* ================= INSIGHTS ================= */
+
+function totalWears(item) { return (item.wearHistory || []).length; }
+
+function daysOwned(item) {
+  const created = new Date(item.createdAt || Date.now());
+  return Math.max(1, Math.round((Date.now() - created.getTime()) / 86400000));
+}
+
+function underusedItems() {
+  const items = state.items;
+  if (items.length < 4) return [];
+  return items.filter(i => {
+    const owned = daysOwned(i);
+    const wears = totalWears(i);
+    if (owned < 21) return false;               // too new to judge
+    if (wears === 0) return true;               // never worn in 3+ weeks
+    const lastWorn = i.wearHistory[i.wearHistory.length - 1];
+    const daysSince = Math.round((Date.now() - new Date(lastWorn).getTime()) / 86400000);
+    return daysSince > 60;                      // untouched for 2 months
+  }).sort((a, b) => totalWears(a) - totalWears(b));
+}
+
+function starItems() {
+  return state.items
+    .map(i => ({ item: i, wears: totalWears(i), partners: partnersOf(i).length }))
+    .filter(x => x.wears > 0 || x.partners >= 4)
+    .sort((a, b) => (b.wears * 2 + b.partners) - (a.wears * 2 + a.partners))
+    .slice(0, 6);
+}
+
+/* Shopping: simulate hypothetical purchases and rank by outfits unlocked + orphans rescued */
+function shoppingSuggestions() {
+  const items = state.items;
+  if (!items.length) return [];
+  const baseOutfitCount = generateOutfits().length;
+  const baseOrphans = items.filter(isOrphan).map(i => i.id);
+
+  const stylesInUse = [...new Set(items.flatMap(i => i.styles))];
+  if (!stylesInUse.length) return [];
+  const candidateColors = ['black', 'white', 'navy', 'beige', 'denim', 'gray'];
+  const candidateCats = ['top', 'bottom', 'shoes', 'dress'];
+
+  const results = [];
+  for (const cat of candidateCats) {
+    for (const col of candidateColors) {
+      for (const style of stylesInUse) {
+        // skip combos identical to something already owned
+        if (items.some(i => i.category === cat && i.colors.length === 1 &&
+            i.colors[0] === col && i.styles.length === 1 && i.styles[0] === style)) continue;
+        const ghost = {
+          id: '__ghost__', category: cat, colors: [col], styles: [style],
+          wearsPerWash: 3, currentWears: 0, wearHistory: [],
+        };
+        state.items.push(ghost);
+        const newCount = generateOutfits().length;
+        const rescued = baseOrphans.filter(id => {
+          const it = items.find(x => x.id === id);
+          return it && !isOrphan(it);
+        }).length;
+        state.items.pop();
+        const gain = newCount - baseOutfitCount;
+        if (gain > 0) results.push({ cat, col, style, gain, rescued });
+      }
+    }
+  }
+  results.sort((a, b) => (b.gain + b.rescued * 3) - (a.gain + a.rescued * 3));
+  // dedupe near-identical suggestions (same category+style, keep best color)
+  const seen = new Set(), top = [];
+  for (const r of results) {
+    const key = r.cat + '|' + r.style;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    top.push(r);
+    if (top.length >= 5) break;
+  }
+  return top;
+}
+
+/* ================= UI HELPERS ================= */
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function swatchesHtml(item) {
+  return '<span class="swatches">' + item.colors.map(c => {
+    const col = colorOf(c);
+    return `<span class="swatch" style="background:${col ? col.hex : '#ccc'}" title="${col ? col.label : c}"></span>`;
+  }).join('') + '</span>';
+}
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._h);
+  t._h = setTimeout(() => t.classList.remove('show'), 2200);
+}
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  renderAll();
+}
+
+/* ================= RENDER: WARDROBE ================= */
+
+function itemCardHtml(item, opts = {}) {
+  const cat = catOf(item);
+  const left = wearsLeft(item);
+  const per = item.wearsPerWash || 1;
+  const pct = Math.round(100 * left / per);
+  const barClass = pct <= 0 ? 'low' : pct <= 40 ? 'mid' : '';
+  const partners = partnersOf(item).length;
+  const wears = totalWears(item);
+  return `
+  <div class="card">
+    <h3><span>${cat.emoji}</span> ${esc(item.name)} ${swatchesHtml(item)}</h3>
+    <div class="meta">${cat.label} · ${item.styles.map(esc).join(', ')}</div>
+    <div class="chips">
+      <span class="chip">${partners} match${partners === 1 ? '' : 'es'}</span>
+      <span class="chip">worn ${wears}×</span>
+      ${left === 0 ? '<span class="chip bad">needs wash</span>' : ''}
+    </div>
+    <div class="wearbar ${barClass}"><div style="width:${pct}%"></div></div>
+    <div class="wearlabel">${left} of ${per} clean wear${per === 1 ? '' : 's'} left</div>
+    <div class="card-actions">
+      <button class="btn small" onclick="wearItem('${item.id}')">👋 Wore it</button>
+      ${item.currentWears > 0 ? `<button class="btn small" onclick="washItem('${item.id}')">🫧 Washed</button>` : ''}
+      <button class="btn small ghost" onclick="openItemModal('${item.id}')">Edit</button>
+    </div>
+  </div>`;
+}
+
+function renderWardrobe() {
+  const grid = document.getElementById('wardrobeGrid');
+  const filter = document.getElementById('filterCat').value;
+  const sort = document.getElementById('sortBy').value;
+  let items = state.items.slice();
+  if (filter) items = items.filter(i => i.category === filter);
+  if (sort === 'recent') items.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+  if (sort === 'wears') items.sort((a, b) => totalWears(b) - totalWears(a));
+  if (sort === 'leastworn') items.sort((a, b) => totalWears(a) - totalWears(b));
+  if (sort === 'dirty') items.sort((a, b) => wearsLeft(a) - wearsLeft(b));
+  grid.innerHTML = items.map(i => itemCardHtml(i)).join('');
+  document.getElementById('wardrobeEmpty').style.display = state.items.length ? 'none' : 'block';
+
+  const outfits = generateOutfits();
+  const orphanCount = state.items.filter(isOrphan).length;
+  document.getElementById('wardrobeStats').innerHTML = `
+    <div class="bigstat"><div class="num">${state.items.length}</div><div class="lbl">pieces</div></div>
+    <div class="bigstat"><div class="num">${outfits.length}</div><div class="lbl">outfits possible</div></div>
+    <div class="bigstat"><div class="num" style="color:${orphanCount ? 'var(--bad)' : 'var(--good)'}">${orphanCount}</div><div class="lbl">match nothing</div></div>
+    <div class="bigstat"><div class="num">${laundryRunwayDays()}</div><div class="lbl">days until laundry</div></div>`;
+}
+
+/* ================= RENDER: OUTFITS ================= */
+
+function renderOutfits() {
+  const list = document.getElementById('outfitList');
+  const styleFilter = document.getElementById('outfitStyle').value;
+  const cleanOnly = document.getElementById('cleanOnly').checked;
+  let outfits = generateOutfits();
+  if (styleFilter) outfits = outfits.filter(o => o.styles.includes(styleFilter));
+  if (cleanOnly) outfits = outfits.filter(o => o.core.every(c => wearsLeft(c) > 0));
+  outfits.sort((a, b) => Math.min(...b.core.map(wearsLeft)) - Math.min(...a.core.map(wearsLeft)));
+
+  if (!outfits.length) {
+    list.innerHTML = `<div class="empty">${state.items.length
+      ? 'No outfits match this filter. ' + (cleanOnly ? 'Everything may need washing — check the Laundry tab.' : 'Try another style, or check the Insights tab to see what to buy.')
+      : 'Add some items first — outfits appear here automatically.'}</div>`;
+    return;
+  }
+  list.innerHTML = outfits.map((o, idx) => {
+    const pieces = o.core.map(c =>
+      `<span class="piece ${wearsLeft(c) === 0 ? 'dirty' : ''}"><span class="emoji">${catOf(c).emoji}</span>${esc(c.name)} ${swatchesHtml(c)}</span>`
+    ).join('<span class="plus">+</span>');
+    const shoesTxt = o.shoes.length ? `<span class="chip good">👟 ${o.shoes.map(s => esc(s.name)).join(' / ')}</span>` : '';
+    const outerTxt = o.outer.length ? `<span class="chip">🧥 ${o.outer.map(s => esc(s.name)).join(' / ')}</span>` : '';
+    const wearable = o.core.every(c => wearsLeft(c) > 0);
+    return `
+    <div class="card outfit-card" style="margin-bottom:10px">
+      <div class="pieces">${pieces}</div>
+      <div class="chips">
+        ${o.styles.map(s => `<span class="chip">${esc(s)}</span>`).join('')}
+        ${shoesTxt}${outerTxt}
+        ${wearable ? '' : '<span class="chip bad">a piece needs washing</span>'}
+      </div>
+      <div class="card-actions">
+        <button class="btn small ${wearable ? 'primary' : ''}" onclick="wearOutfit(${idx})" ${wearable ? '' : 'disabled'}>👋 Wear today</button>
+      </div>
+    </div>`;
+  }).join('');
+  list._outfits = outfits;
+}
+
+function wearOutfit(idx) {
+  const outfits = document.getElementById('outfitList')._outfits;
+  const o = outfits && outfits[idx];
+  if (!o) return;
+  o.core.forEach(c => {
+    c.currentWears = (c.currentWears || 0) + 1;
+    (c.wearHistory = c.wearHistory || []).push(today());
+  });
+  save(); renderAll();
+  toast('Outfit logged — enjoy the day! ✨');
+}
+
+/* ================= RENDER: LAUNDRY ================= */
+
+function renderLaundry() {
+  const days = laundryRunwayDays();
+  const dirty = state.items.filter(i => wearsLeft(i) === 0);
+  const cleanOutfits = generateOutfits().filter(o => o.core.every(c => wearsLeft(c) > 0)).length;
+  document.getElementById('laundryStats').innerHTML = `
+    <div class="bigstat"><div class="num" style="color:${days <= 1 ? 'var(--bad)' : days <= 3 ? 'var(--warn)' : 'var(--good)'}">${days}</div><div class="lbl">day${days === 1 ? '' : 's'} of clean outfits left</div></div>
+    <div class="bigstat"><div class="num">${cleanOutfits}</div><div class="lbl">outfits fully clean now</div></div>
+    <div class="bigstat"><div class="num">${dirty.length}</div><div class="lbl">pieces in the basket</div></div>`;
+  document.getElementById('laundryDetail').innerHTML =
+    days <= 1
+      ? `<div class="section-note">⚠️ Time to find a laundromat — you're down to your last clean outfit${days === 0 ? ' (or past it!)' : ''}.</div>`
+      : `<div class="section-note">You're good for about <b>${days} days</b> before washing becomes urgent.</div>`;
+  document.getElementById('dirtyGrid').innerHTML = dirty.length
+    ? dirty.map(i => itemCardHtml(i)).join('')
+    : '<div class="empty" style="grid-column:1/-1">Nothing needs washing. 🎉</div>';
+}
+
+function washAll() {
+  state.items.forEach(i => i.currentWears = 0);
+  save(); renderAll();
+  toast('Fresh start — everything is clean 🫧');
+}
+function washItem(id) {
+  const i = state.items.find(x => x.id === id);
+  if (i) { i.currentWears = 0; save(); renderAll(); toast(`${i.name} is clean`); }
+}
+function wearItem(id) {
+  const i = state.items.find(x => x.id === id);
+  if (i) {
+    i.currentWears = (i.currentWears || 0) + 1;
+    (i.wearHistory = i.wearHistory || []).push(today());
+    save(); renderAll(); toast(`Logged a wear for ${i.name}`);
+  }
+}
+
+/* ================= RENDER: INSIGHTS ================= */
+
+function renderInsights() {
+  // Shopping
+  const shop = shoppingSuggestions();
+  document.getElementById('shoppingList').innerHTML = shop.length
+    ? shop.map((s, i) => {
+        const col = colorOf(s.col), cat = CATEGORIES.find(c => c.id === s.cat);
+        return `
+        <div class="suggestion">
+          <div class="rank">${i + 1}</div>
+          <div>
+            <b>${col.label} ${esc(s.style)} ${cat.label.toLowerCase()}</b>
+            <span class="swatch" style="background:${col.hex};vertical-align:middle;margin-left:4px"></span>
+            <div class="why">Unlocks <b>${s.gain}</b> new outfit${s.gain === 1 ? '' : 's'}${s.rescued ? ` and rescues <b>${s.rescued}</b> piece${s.rescued === 1 ? '' : 's'} that currently match nothing` : ''}.</div>
+          </div>
+        </div>`;
+      }).join('')
+    : `<div class="empty">${state.items.length ? 'Your wardrobe is already well connected — no purchase would significantly add outfits. 👏' : 'Add items first to get purchase suggestions.'}</div>`;
+
+  // Orphans
+  const orphans = state.items.filter(isOrphan);
+  document.getElementById('orphanGrid').innerHTML = orphans.length
+    ? orphans.map(i => itemCardHtml(i)).join('')
+    : '<div class="empty" style="grid-column:1/-1">Every piece pairs with something. Nicely curated! 👌</div>';
+
+  // Underused
+  const dusty = underusedItems();
+  document.getElementById('underusedGrid').innerHTML = dusty.length
+    ? dusty.map(i => {
+        const wears = totalWears(i);
+        const verdict = wears === 0
+          ? 'Never worn since you added it. Plan an outfit around it this week — or donate it.'
+          : 'Untouched for over two months. Give it one more chance, then let it go.';
+        return itemCardHtml(i).replace('<div class="card-actions">',
+          `<div class="section-note">💭 ${verdict}</div><div class="card-actions">`);
+      }).join('')
+    : `<div class="empty" style="grid-column:1/-1">${state.items.length < 4 ? 'Once you\'ve tracked wears for a few weeks, donation candidates show up here.' : 'Everything is getting used. 💪'}</div>`;
+
+  // Stars
+  const stars = starItems();
+  document.getElementById('starGrid').innerHTML = stars.length
+    ? stars.map(x => itemCardHtml(x.item)).join('')
+    : '<div class="empty" style="grid-column:1/-1">Log some wears and your MVPs will appear here.</div>';
+}
+
+/* ================= ITEM MODAL ================= */
+
+let editingId = null;
+let picked = { category: 'top', colors: [], styles: [] };
+
+function buildPickers() {
+  document.getElementById('f-category').innerHTML = CATEGORIES.map(c =>
+    `<button type="button" class="pick" data-cat="${c.id}" onclick="pickCategory('${c.id}')">${c.emoji} ${c.label}</button>`).join('');
+  document.getElementById('f-colors').innerHTML = COLORS.map(c =>
+    `<button type="button" class="pick" data-color="${c.id}" onclick="togglePick('colors','${c.id}')"><span class="swatch" style="background:${c.hex}"></span>${c.label}</button>`).join('');
+  document.getElementById('f-styles').innerHTML = STYLES.map(s =>
+    `<button type="button" class="pick" data-style="${s}" onclick="togglePick('styles','${s}')">${s}</button>`).join('');
+
+  const catSel = document.getElementById('filterCat');
+  CATEGORIES.forEach(c => catSel.insertAdjacentHTML('beforeend', `<option value="${c.id}">${c.emoji} ${c.label}</option>`));
+  const styleSel = document.getElementById('outfitStyle');
+  STYLES.forEach(s => styleSel.insertAdjacentHTML('beforeend', `<option value="${s}">${s}</option>`));
+}
+
+function pickCategory(id) {
+  picked.category = id;
+  const cat = CATEGORIES.find(c => c.id === id);
+  if (!editingId) document.getElementById('f-wears').value = cat.defaultWears;
+  refreshPickers();
+}
+function togglePick(kind, id) {
+  const arr = picked[kind];
+  const i = arr.indexOf(id);
+  if (i >= 0) arr.splice(i, 1); else arr.push(id);
+  refreshPickers();
+}
+function refreshPickers() {
+  document.querySelectorAll('#f-category .pick').forEach(el =>
+    el.classList.toggle('on', el.dataset.cat === picked.category));
+  document.querySelectorAll('#f-colors .pick').forEach(el =>
+    el.classList.toggle('on', picked.colors.includes(el.dataset.color)));
+  document.querySelectorAll('#f-styles .pick').forEach(el =>
+    el.classList.toggle('on', picked.styles.includes(el.dataset.style)));
+}
+
+function openItemModal(id) {
+  editingId = id || null;
+  const item = id ? state.items.find(x => x.id === id) : null;
+  document.getElementById('itemModalTitle').textContent = item ? 'Edit item' : 'Add item';
+  document.getElementById('f-delete').style.display = item ? '' : 'none';
+  document.getElementById('f-name').value = item ? item.name : '';
+  picked = item
+    ? { category: item.category, colors: item.colors.slice(), styles: item.styles.slice() }
+    : { category: 'top', colors: [], styles: ['casual'] };
+  document.getElementById('f-wears').value = item ? item.wearsPerWash : catOf({ category: picked.category }).defaultWears;
+  refreshPickers();
+  document.getElementById('itemModalBg').classList.add('open');
+  document.getElementById('f-name').focus();
+}
+function closeItemModal() { document.getElementById('itemModalBg').classList.remove('open'); }
+
+function saveItem() {
+  const name = document.getElementById('f-name').value.trim();
+  if (!name) { toast('Give the item a name'); return; }
+  if (!picked.colors.length) { toast('Pick at least one color'); return; }
+  if (!picked.styles.length) { toast('Pick at least one style'); return; }
+  const wears = Math.max(1, parseInt(document.getElementById('f-wears').value, 10) || 1);
+  if (editingId) {
+    const item = state.items.find(x => x.id === editingId);
+    Object.assign(item, { name, category: picked.category, colors: picked.colors.slice(), styles: picked.styles.slice(), wearsPerWash: wears });
+  } else {
+    state.items.push({
+      id: uid(), name, category: picked.category,
+      colors: picked.colors.slice(), styles: picked.styles.slice(),
+      wearsPerWash: wears, currentWears: 0, wearHistory: [],
+      createdAt: new Date().toISOString(),
+    });
+  }
+  save(); closeItemModal(); renderAll();
+  toast(editingId ? 'Item updated' : 'Item added to your wardrobe');
+}
+
+function deleteItem() {
+  if (!editingId) return;
+  const item = state.items.find(x => x.id === editingId);
+  if (!confirm(`Delete "${item.name}" from your wardrobe?`)) return;
+  state.items = state.items.filter(x => x.id !== editingId);
+  save(); closeItemModal(); renderAll();
+  toast('Item removed');
+}
+
+/* ================= IMPORT / EXPORT / SAMPLE ================= */
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `capsulew-backup-${today()}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('Backup downloaded');
+}
+function importData(ev) {
+  const file = ev.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (!Array.isArray(data.items)) throw new Error('bad format');
+      state = data; save(); renderAll();
+      toast(`Imported ${state.items.length} items`);
+    } catch (e) { toast('That file doesn\'t look like a CapsuleW backup'); }
+  };
+  reader.readAsText(file);
+  ev.target.value = '';
+}
+
+function loadSample() {
+  const mk = (name, category, colors, styles, wearsPerWash) => ({
+    id: uid() + Math.random().toString(36).slice(2, 5), name, category, colors, styles,
+    wearsPerWash, currentWears: 0, wearHistory: [],
+    createdAt: new Date(Date.now() - 40 * 86400000).toISOString(),
+  });
+  state.items = [
+    mk('White linen shirt', 'top', ['white'], ['casual', 'smart'], 2),
+    mk('Black tee', 'top', ['black'], ['casual', 'sport'], 2),
+    mk('Striped breton top', 'top', ['navy', 'white'], ['casual'], 2),
+    mk('Silk evening blouse', 'top', ['burgundy'], ['evening', 'smart'], 1),
+    mk('Neon workout top', 'top', ['yellow'], ['sport'], 1),
+    mk('Dark jeans', 'bottom', ['denim'], ['casual', 'smart'], 6),
+    mk('Black trousers', 'bottom', ['black'], ['smart', 'evening'], 4),
+    mk('Khaki shorts', 'bottom', ['khaki'], ['casual', 'beach'], 3),
+    mk('Running leggings', 'bottom', ['black'], ['sport'], 2),
+    mk('Little black dress', 'dress', ['black'], ['evening', 'smart'], 2),
+    mk('Floral sundress', 'dress', ['pink', 'green'], ['casual', 'beach'], 2),
+    mk('White sneakers', 'shoes', ['white'], ['casual', 'sport'], 25),
+    mk('Black heels', 'shoes', ['black'], ['evening', 'smart'], 25),
+    mk('Denim jacket', 'outerwear', ['denim'], ['casual'], 15),
+    mk('Orange statement skirt', 'bottom', ['orange'], ['evening'], 3),
+  ];
+  save(); renderAll();
+  toast('Sample wardrobe loaded — explore the tabs!');
+}
+
+/* ================= BOOT ================= */
+
+function renderAll() {
+  renderWardrobe();
+  renderOutfits();
+  renderLaundry();
+  renderInsights();
+}
+
+load();
+buildPickers();
+renderAll();
+</script>
+</body>
+</html>
