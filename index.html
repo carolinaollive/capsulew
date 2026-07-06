@@ -1245,7 +1245,9 @@ function loadSample() {
 /* ================= SETTINGS: MODEL CHOICE + KEYS ================= */
 
 const MODELS = [
-  { id: 'claude-haiku-4-5', provider: 'anthropic', label: 'Claude Haiku 4.5 — fast & affordable (recommended)',
+  { id: 'shared', provider: 'shared', label: 'House model — no setup needed (recommended)',
+    note: 'Runs on the app\'s shared key. Just add photos — nothing to sign up for.' },
+  { id: 'claude-haiku-4-5', provider: 'anthropic', label: 'Claude Haiku 4.5 — your own key, fast & affordable',
     note: 'A fraction of a cent per photo. Great accuracy for this task.' },
   { id: 'gpt-4o-mini', provider: 'openai', label: 'OpenAI GPT-4o mini — lowest cost',
     note: 'A fraction of a cent per photo.' },
@@ -1255,6 +1257,7 @@ const MODELS = [
     note: 'Roughly a cent per photo. Best for tricky photos (patterns, layered garments).' },
 ];
 const PROVIDERS = {
+  shared:    { label: 'Access code', hint: 'only if the app owner gave you one', where: '' },
   anthropic: { label: 'Anthropic', hint: 'sk-ant-...', where: 'console.anthropic.com → API keys' },
   openai:    { label: 'OpenAI',    hint: 'sk-...',     where: 'platform.openai.com → API keys' },
   google:    { label: 'Google',    hint: 'AIza...',    where: 'aistudio.google.com → Get API key (free tier available)' },
@@ -1305,8 +1308,11 @@ function modelChanged() {
   input.value = settingsKeyDraft[model.provider] ?? getApiKey(model.provider);
   input.placeholder = prov.hint;
   document.getElementById('f-modelnote').textContent = model.note;
-  document.getElementById('f-keylabel').textContent = `${prov.label} API key`;
-  document.getElementById('f-keynote').innerHTML = `Get one at <b>${prov.where}</b>.`;
+  document.getElementById('f-keylabel').textContent = model.provider === 'shared'
+    ? 'Access code — optional' : `${prov.label} API key`;
+  document.getElementById('f-keynote').innerHTML = model.provider === 'shared'
+    ? 'No API key needed. If the app owner set an access code, enter it here.'
+    : `Get one at <b>${prov.where}</b>.`;
 }
 
 function saveSettings() {
@@ -1320,7 +1326,7 @@ function saveSettings() {
     else if (key === '') localStorage.removeItem(keyLs(prov));
   }
   closeSettings();
-  toast(getApiKey() ? `Photo analysis is on — using ${model.label.split(' — ')[0]}` : 'Saved. Add an API key to enable photo analysis.');
+  toast(analysisReady() ? `Photo analysis is on — using ${model.label.split(' — ')[0]}` : 'Saved. Add an API key to enable photo analysis.');
 }
 
 /* ================= PHOTO ANALYSIS (Claude vision) ================= */
@@ -1397,13 +1403,40 @@ async function apiError(res, provider) {
 
 async function analyzePhoto(dataUrl) {
   const model = currentModel();
-  const key = getApiKey(model.provider);
-  if (!key) throw new Error('no-key');
   const [meta, b64] = dataUrl.split(',');
   const mediaType = meta.match(/data:(.*?);/)[1];
+  if (model.provider === 'shared') return analyzeShared(mediaType, b64);
+  const key = getApiKey(model.provider);
+  if (!key) throw new Error('no-key');
   if (model.provider === 'anthropic') return analyzeAnthropic(model.id, key, mediaType, b64);
   if (model.provider === 'openai') return analyzeOpenAI(model.id, key, dataUrl);
   return analyzeGemini(model.id, key, mediaType, b64);
+}
+
+async function analyzeShared(mediaType, b64) {
+  let res;
+  try {
+    res = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ mediaType, data: b64, code: getApiKey('shared') || undefined }),
+    });
+  } catch (e) {
+    throw new Error('Could not reach the analysis service — are you online?');
+  }
+  if (!res.ok) {
+    let msg = `Analysis error ${res.status}`;
+    try { msg = (await res.json()).error?.message || msg; } catch (e) {}
+    if (msg === 'shared-analysis-not-configured') msg = 'The house model isn\'t set up yet — pick a model with your own key in Settings, or ask the app owner.';
+    if (msg === 'wrong-access-code') msg = 'Wrong access code — check Settings.';
+    if (res.status === 429) msg = 'The house model is busy — wait a moment and retry.';
+    throw new Error(msg);
+  }
+  const data = await res.json();
+  if (data.stop_reason === 'refusal') throw new Error('The photo could not be analyzed');
+  const text = data.content.find(b => b.type === 'text')?.text;
+  if (!text) throw new Error('Empty response');
+  return JSON.parse(text);
 }
 
 async function analyzeAnthropic(model, key, mediaType, b64) {
@@ -1505,6 +1538,10 @@ function itemFromParse(parsed, photo) {
 
 let pendingPhoto = null;
 
+function analysisReady() {
+  return currentModel().provider === 'shared' || !!getApiKey();
+}
+
 async function photoPicked(ev) {
   const file = ev.target.files[0];
   ev.target.value = '';
@@ -1521,7 +1558,7 @@ async function photoPicked(ev) {
     status.textContent = 'Could not read that image.';
     return;
   }
-  if (!getApiKey()) {
+  if (!analysisReady()) {
     status.className = 'parse-status';
     status.innerHTML = 'Photo attached. Add your API key in <b>Settings</b> to have the fields fill in automatically.';
     return;
@@ -1549,7 +1586,7 @@ async function photoPicked(ev) {
 /* ---- Bulk import: many photos → whole wardrobe, zero forms ---- */
 
 function startBulkImport() {
-  if (!getApiKey()) {
+  if (!analysisReady()) {
     toast('First add your API key so photos can be analyzed');
     openSettings();
     return;
