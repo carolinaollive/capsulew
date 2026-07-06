@@ -52,9 +52,10 @@
     background: var(--bg); color: var(--ink);
     min-height: 100vh; padding-bottom: 90px;
     -webkit-font-smoothing: antialiased;
+    text-transform: lowercase;
   }
   header {
-    padding: 22px 18px 14px; max-width: 980px; margin: 0 auto;
+    padding: 22px max(18px, 4vw) 14px; max-width: none; margin: 0;
     display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px;
   }
   header h1 { font-size: 1.6rem; letter-spacing: -.045em; font-weight: 700; text-transform: lowercase; }
@@ -80,7 +81,7 @@
   .eyebrow::after { content: ""; flex: 1; height: 1px; background: var(--line); }
   .eyebrow b { color: var(--ink); font-weight: 700; }
   .header-actions { display: flex; gap: 8px; }
-  main { max-width: 980px; margin: 0 auto; padding: 8px 18px; }
+  main { max-width: none; margin: 0; padding: 8px max(18px, 4vw); }
 
   /* Tabs */
   nav {
@@ -132,6 +133,7 @@
     letter-spacing: .1em; text-transform: uppercase; margin-bottom: 8px;
   }
   .cat-tag {
+    text-transform: uppercase;
     display: inline-flex; align-items: center; justify-content: center; flex: none;
     min-width: 20px; height: 20px; padding: 0 4px; border: 1px solid var(--rule);
     border-radius: 2px; font-size: .6rem; font-weight: 700; letter-spacing: .04em;
@@ -178,6 +180,7 @@
     text-align: center; color: var(--ink-soft); font-size: .9rem; margin-top: 12px;
   }
   .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 12px 0; }
+  button, select, input { text-transform: inherit; }
   select, input[type=text], input[type=number], input[type=date] {
     background: var(--card); color: var(--ink); border: 1px solid var(--line);
     border-radius: 10px; padding: 8px 10px; font-size: .88rem; font-family: inherit;
@@ -215,6 +218,7 @@
   .row { display: flex; gap: 14px; padding: 16px 0; border-bottom: 1px solid var(--line); align-items: flex-start; }
   .row-photo { width: 76px; height: 76px; object-fit: cover; border-radius: 2px; flex: none; }
   .row-photo-empty {
+    text-transform: uppercase;
     display: flex; align-items: center; justify-content: center; width: 76px; height: 76px; flex: none;
     background: var(--chip); border: 1px solid var(--line); border-radius: 2px;
     font-weight: 700; font-size: 1.2rem; color: var(--ink-soft);
@@ -235,13 +239,30 @@
     .row { flex-wrap: wrap; }
     .row-actions { flex-direction: row; width: 100%; justify-content: flex-start; }
   }
+  @media (min-width: 900px) {
+    .row { gap: 24px; padding: 22px 0; }
+    .row-photo, .row-photo-empty { width: 100px; height: 100px; }
+    .row-name { font-size: 1.8rem; }
+    .row-meta { font-size: .68rem; }
+    .row-actions { flex-direction: row; align-items: center; align-self: center; }
+    h2 { font-size: 2.5rem; }
+    .sub { font-size: 1rem; }
+    .eyebrow { font-size: .72rem; }
+    .btn.block { padding: 24px 26px; font-size: 1.25rem; }
+    .marquee-inner { font-size: .7rem; }
+    .modal-bg { align-items: center; }
+    .statrow { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+    .bigstat .num { font-size: 4rem; }
+    .suggestion { padding: 20px; }
+    .toast { bottom: 30px; }
+  }
 
   /* Display statement (hero) */
   .display {
-    font-size: clamp(2.3rem, 8.5vw, 4.2rem); font-weight: 700; letter-spacing: -.045em;
-    line-height: 1.02; margin: 20px 0 12px;
+    font-size: clamp(2.3rem, 7vw, 7.2rem); font-weight: 700; letter-spacing: -.045em;
+    line-height: 1.08; margin: 20px 0 12px;
   }
-  .display .hl { background: var(--accent); border-radius: 4px; padding: 0 .08em; }
+  .display .hl { background: var(--accent); color: var(--accent-ink); border-radius: .06em; padding: 0 .08em; }
   .display-note { font-size: .82rem; color: var(--ink-soft); margin: 0 0 10px; }
 
   /* Block CTA */
@@ -254,12 +275,13 @@
   .btn.block:hover { background: var(--accent); color: var(--accent-ink); }
 
   /* Giant footer wordmark */
-  footer { max-width: 980px; margin: 44px auto 0; padding: 0 18px 30px; }
+  footer { max-width: none; margin: 44px 0 0; padding: 0 max(18px, 4vw) 30px; overflow: hidden; }
   .giant {
-    font-size: clamp(4.4rem, 20vw, 12.5rem); font-weight: 700; letter-spacing: -.06em;
-    line-height: .85; border-top: 1px solid var(--rule); padding-top: 20px; text-transform: lowercase;
+    font-size: min(17.5vw, 24rem); font-weight: 700; letter-spacing: -.06em;
+    line-height: .85; border-top: 1px solid var(--rule); padding-top: 20px;
+    text-transform: lowercase; white-space: nowrap;
   }
-  .giant span { background: var(--accent); border-radius: 5px; padding: 0 .05em; }
+  .giant span { color: var(--accent); -webkit-text-stroke: .015em var(--ink); }
   .foot-meta {
     display: flex; justify-content: space-between; gap: 10px; margin-top: 14px;
     font-size: .62rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
@@ -455,7 +477,7 @@
     </div>
     <div class="field">
       <label>Wears before it needs washing</label>
-      <input type="number" id="f-wears" min="1" max="60" value="2">
+      <input type="number" id="f-wears" min="1" max="99" value="2">
     </div>
     <div class="modal-actions">
       <button class="btn danger" id="f-delete" style="display:none;margin-right:auto" onclick="deleteItem()">Delete</button>
@@ -801,7 +823,7 @@ function itemCardHtml(item, opts = {}) {
       <div class="chips">
         <span class="chip">${partners} match${partners === 1 ? '' : 'es'}</span>
         <span class="chip">worn ${wears}×</span>
-        <span class="chip ${left === 0 ? 'bad' : ''}">${left === 0 ? 'needs wash' : `${left}/${per} wears left`}</span>
+        <span class="chip ${left === 0 ? 'bad' : ''}">${left === 0 ? 'needs wash' : per > 99 ? 'rarely washed' : `${left}/${per} wears left`}</span>
       </div>
       <div class="wearbar ${barClass}"><div style="width:${pct}%"></div></div>
       ${opts.note ? `<div class="section-note">${opts.note}</div>` : ''}
@@ -829,8 +851,13 @@ function renderWardrobe() {
 
   const outfits = generateOutfits();
   const orphanCount = state.items.filter(isOrphan).length;
-  document.getElementById('wardrobeStats').innerHTML = state.items.length ? `
-    <div class="display">${state.items.length} pieces make<br><span class="hl">${outfits.length} outfit${outfits.length === 1 ? '' : 's'}.</span><br>${laundryRunwayDays()} days till laundry.</div>
+  const n = state.items.length;
+  const days = laundryRunwayDays();
+  const hero = !n ? '' : !outfits.length
+    ? `<div class="display">${n} piece${n === 1 ? '' : 's'} so far.<br><span class="hl">No outfits yet.</span><br>Add tops & bottoms.</div>`
+    : `<div class="display">${n} piece${n === 1 ? '' : 's'} make${n === 1 ? 's' : ''}<br><span class="hl">${outfits.length} outfit${outfits.length === 1 ? '' : 's'}.</span><br>${days} day${days === 1 ? '' : 's'} till laundry.</div>`;
+  document.getElementById('wardrobeStats').innerHTML = n ? `
+    ${hero}
     ${orphanCount ? `<div class="display-note">✳ ${orphanCount} piece${orphanCount === 1 ? '' : 's'} match${orphanCount === 1 ? 'es' : ''} nothing right now — see insights.</div>` : ''}` : '';
 }
 
@@ -1041,7 +1068,7 @@ function saveItem() {
   if (!name) { toast('Give the item a name'); return; }
   if (!picked.colors.length) { toast('Pick at least one color'); return; }
   if (!picked.styles.length) { toast('Pick at least one style'); return; }
-  const wears = Math.max(1, parseInt(document.getElementById('f-wears').value, 10) || 1);
+  const wears = Math.min(99, Math.max(1, parseInt(document.getElementById('f-wears').value, 10) || 1));
   if (editingId) {
     const item = state.items.find(x => x.id === editingId);
     Object.assign(item, { name, category: picked.category, colors: picked.colors.slice(), styles: picked.styles.slice(), wearsPerWash: wears, photo: pendingPhoto || item.photo || null });
