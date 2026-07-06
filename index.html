@@ -11,9 +11,7 @@
 <meta name="theme-color" content="#EAE9E6">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://use.typekit.net/cqd0mhs.css">
 <style>
   :root {
     --bg: #EAE9E6;
@@ -28,7 +26,7 @@
     --warn: #A97B1F;
     --bad: #A6402E;
     --chip: #DFDED8;
-    --radius: 10px;
+    --radius: 4px;
     --shadow: 0 1px 2px rgba(19,19,17,.04);
   }
   @media (prefers-color-scheme: dark) {
@@ -50,7 +48,7 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: "Instrument Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-family: "roc-grotesk", "Helvetica Neue", Helvetica, Arial, sans-serif;
     background: var(--bg); color: var(--ink);
     min-height: 100vh; padding-bottom: 90px;
     -webkit-font-smoothing: antialiased;
@@ -103,7 +101,7 @@
   .tab.active { display: block; animation: fade .18s ease; }
   @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
 
-  h2 { font-size: 1.4rem; font-weight: 600; letter-spacing: -.03em; margin: 16px 0 4px; }
+  h2 { font-size: 1.75rem; font-weight: 700; letter-spacing: -.035em; margin: 18px 0 4px; }
   .sub { color: var(--ink-soft); font-size: .88rem; margin-bottom: 14px; max-width: 60ch; }
 
   /* Buttons */
@@ -133,6 +131,11 @@
     color: var(--ink-soft); font-size: .66rem; font-weight: 500;
     letter-spacing: .1em; text-transform: uppercase; margin-bottom: 8px;
   }
+  .cat-tag {
+    display: inline-flex; align-items: center; justify-content: center; flex: none;
+    min-width: 20px; height: 20px; padding: 0 4px; border: 1px solid var(--rule);
+    border-radius: 2px; font-size: .6rem; font-weight: 700; letter-spacing: .04em;
+  }
   .swatches { display: inline-flex; gap: 3px; vertical-align: middle; }
   .swatch { width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(0,0,0,.15); display: inline-block; }
   .chips { display: flex; flex-wrap: wrap; gap: 5px; margin: 6px 0; }
@@ -161,7 +164,7 @@
   }
   .statrow { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 14px 0; }
 
-  .outfit-card .pieces { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 8px 0; }
+  .pieces { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 8px 0; }
   .piece {
     display: inline-flex; align-items: center; gap: 6px; background: var(--bg);
     border: 1px solid var(--line); border-radius: 5px; padding: 5px 10px; font-size: .8rem; font-weight: 500;
@@ -188,13 +191,13 @@
   .modal-bg.open { display: flex; }
   .modal {
     background: var(--card); width: 100%; max-width: 560px; max-height: 88vh; overflow-y: auto;
-    border-radius: 18px 18px 0 0; padding: 20px 20px 30px; animation: up .2s ease;
+    border-radius: 10px 10px 0 0; padding: 20px 20px 30px; animation: up .2s ease;
   }
-  @media (min-width: 620px) { .modal-bg { align-items: center; } .modal { border-radius: 18px; } }
+  @media (min-width: 620px) { .modal-bg { align-items: center; } .modal { border-radius: 10px; } }
   @keyframes up { from { transform: translateY(30px); opacity: 0; } to { transform: none; opacity: 1; } }
   .modal h2 { margin-top: 0; }
   .field { margin: 13px 0; }
-  .field label { display: block; font-size: .8rem; font-weight: 600; margin-bottom: 6px; color: var(--ink-soft); }
+  .field label { display: block; font-size: .64rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 7px; color: var(--ink-soft); }
   .field input[type=text], .field input[type=number], .field select { width: 100%; }
   .pick-row { display: flex; flex-wrap: wrap; gap: 6px; }
   .pick {
@@ -205,7 +208,63 @@
   .pick.on { border-color: var(--rule); background: var(--accent); color: var(--accent-ink); font-weight: 600; }
   .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
 
-  .insight-block { margin-bottom: 22px; }
+  .insight-block { margin-bottom: 30px; }
+
+  /* Editorial index rows */
+  .index { border-top: 1px solid var(--rule); }
+  .row { display: flex; gap: 14px; padding: 16px 0; border-bottom: 1px solid var(--line); align-items: flex-start; }
+  .row-photo { width: 76px; height: 76px; object-fit: cover; border-radius: 2px; flex: none; }
+  .row-photo-empty {
+    display: flex; align-items: center; justify-content: center; width: 76px; height: 76px; flex: none;
+    background: var(--chip); border: 1px solid var(--line); border-radius: 2px;
+    font-weight: 700; font-size: 1.2rem; color: var(--ink-soft);
+  }
+  .row-main { flex: 1; min-width: 0; }
+  .row-meta {
+    font-size: .62rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .row-meta b { color: var(--ink); }
+  .row-name {
+    font-size: 1.3rem; font-weight: 700; letter-spacing: -.025em; line-height: 1.1;
+    margin: 3px 0 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .row .wearbar { max-width: 220px; margin: 8px 0 0; }
+  .row-actions { flex: none; display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+  @media (max-width: 560px) {
+    .row { flex-wrap: wrap; }
+    .row-actions { flex-direction: row; width: 100%; justify-content: flex-start; }
+  }
+
+  /* Display statement (hero) */
+  .display {
+    font-size: clamp(2.3rem, 8.5vw, 4.2rem); font-weight: 700; letter-spacing: -.045em;
+    line-height: 1.02; margin: 20px 0 12px;
+  }
+  .display .hl { background: var(--accent); border-radius: 4px; padding: 0 .08em; }
+  .display-note { font-size: .82rem; color: var(--ink-soft); margin: 0 0 10px; }
+
+  /* Block CTA */
+  .btn.block {
+    display: block; width: 100%; text-align: left; padding: 18px; margin: 14px 0 6px;
+    font-size: 1.05rem; font-weight: 700; letter-spacing: -.01em;
+    background: var(--ink); color: var(--bg); border-color: var(--ink); border-radius: 4px;
+  }
+  .btn.block::after { content: "\2192"; float: right; }
+  .btn.block:hover { background: var(--accent); color: var(--accent-ink); }
+
+  /* Giant footer wordmark */
+  footer { max-width: 980px; margin: 44px auto 0; padding: 0 18px 30px; }
+  .giant {
+    font-size: clamp(4.4rem, 20vw, 12.5rem); font-weight: 700; letter-spacing: -.06em;
+    line-height: .85; border-top: 1px solid var(--rule); padding-top: 20px; text-transform: lowercase;
+  }
+  .giant span { background: var(--accent); border-radius: 5px; padding: 0 .05em; }
+  .foot-meta {
+    display: flex; justify-content: space-between; gap: 10px; margin-top: 14px;
+    font-size: .62rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft);
+  }
 
   /* Photos */
   .item-photo {
@@ -213,7 +272,7 @@
     margin-bottom: 8px; background: var(--chip); display: block;
   }
   .photo-drop {
-    border: 1.5px dashed var(--line); border-radius: 12px; padding: 14px;
+    border: 1px solid var(--rule); border-radius: 4px; padding: 14px;
     text-align: center; cursor: pointer; background: var(--chip);
     transition: border-color .15s ease;
   }
@@ -243,7 +302,7 @@
 
   .toast {
     position: fixed; left: 50%; transform: translateX(-50%); bottom: 86px; z-index: 80;
-    background: var(--ink); color: var(--bg); padding: 10px 18px; border-radius: 999px;
+    background: var(--ink); color: var(--bg); padding: 10px 18px; border-radius: 4px;
     font-size: .85rem; opacity: 0; pointer-events: none; transition: opacity .25s ease;
   }
   .toast.show { opacity: 1; }
@@ -257,7 +316,7 @@
   <div class="header-actions">
     <button class="btn small ghost" onclick="exportData()">Export</button>
     <button class="btn small ghost" onclick="document.getElementById('importFile').click()">Import</button>
-    <button class="btn small ghost" onclick="openSettings()" title="Settings">⚙️</button>
+    <button class="btn small ghost" onclick="openSettings()">Settings</button>
     <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
   </div>
 </header>
@@ -268,9 +327,9 @@
   <!-- ====== WARDROBE ====== -->
   <section id="tab-wardrobe" class="tab active">
     <div class="eyebrow"><b>0/1</b> Wardrobe</div>
-    <div class="statrow" id="wardrobeStats"></div>
+    <div id="wardrobeStats"></div>
+    <button class="btn block" onclick="startBulkImport()">Add from photos — auto-analyzed</button>
     <div class="toolbar">
-      <button class="btn primary" onclick="startBulkImport()">📷 Add from photos</button>
       <button class="btn" onclick="openItemModal()">+ Add manually</button>
       <input type="file" id="bulkPhotos" accept="image/*" multiple style="display:none" onchange="bulkImport(event)">
       <select id="filterCat" onchange="renderWardrobe()">
@@ -284,10 +343,10 @@
       </select>
     </div>
     <div id="bulkStatus"></div>
-    <div class="grid" id="wardrobeGrid"></div>
+    <div class="index" id="wardrobeGrid"></div>
     <div class="empty" id="wardrobeEmpty" style="display:none">
       Your wardrobe is empty.<br><br>
-      <button class="btn primary" onclick="startBulkImport()">📷 Snap or pick photos of your clothes</button><br><br>
+      <button class="btn primary" onclick="startBulkImport()">Snap or pick photos of your clothes</button><br><br>
       Every photo is analyzed automatically — category, colors, style, wash needs.<br><br>
       <button class="btn small" onclick="openItemModal()">Add manually instead</button>
       &nbsp;
@@ -300,9 +359,7 @@
     <div class="eyebrow"><b>0/2</b> Outfits</div>
     <h2>Outfit combinations</h2>
     <p class="sub">Every wearable pairing in your wardrobe, matched by color and style. Or skip the browsing entirely:</p>
-    <div class="toolbar">
-      <button class="btn primary" onclick="dressMe()">✨ Dress me today</button>
-    </div>
+    <button class="btn block" onclick="dressMe()">Dress me today</button>
     <div id="dressMeResult"></div>
     <div class="toolbar">
       <select id="outfitStyle" onchange="renderOutfits()">
@@ -312,7 +369,7 @@
         <input type="checkbox" id="cleanOnly" onchange="renderOutfits()"> Clean pieces only
       </label>
     </div>
-    <div id="outfitList"></div>
+    <div class="index" id="outfitList"></div>
   </section>
 
   <!-- ====== LAUNDRY ====== -->
@@ -323,9 +380,9 @@
     <div class="statrow" id="laundryStats"></div>
     <div id="laundryDetail"></div>
     <h2>Needs washing</h2>
-    <div class="grid" id="dirtyGrid"></div>
+    <div class="index" id="dirtyGrid"></div>
     <div class="toolbar" style="margin-top:14px">
-      <button class="btn" onclick="washAll()">🫧 I did laundry — mark everything clean</button>
+      <button class="btn" onclick="washAll()">I did laundry — mark everything clean</button>
     </div>
   </section>
 
@@ -340,26 +397,31 @@
     <div class="insight-block">
       <h2>Matches nothing</h2>
       <p class="sub">These pieces can't form a single outfit with the rest of your wardrobe. Buy them a partner (see the shopping list) — or let them go.</p>
-      <div class="grid" id="orphanGrid"></div>
+      <div class="index" id="orphanGrid"></div>
     </div>
     <div class="insight-block">
       <h2>Underused — wear it or donate it</h2>
       <p class="sub">Items you've barely touched. If a piece keeps sitting here trip after trip, it's earning its weight in your luggage without paying rent.</p>
-      <div class="grid" id="underusedGrid"></div>
+      <div class="index" id="underusedGrid"></div>
     </div>
     <div class="insight-block">
       <h2>Your workhorses</h2>
       <p class="sub">Most worn and most versatile — buy more like these.</p>
-      <div class="grid" id="starGrid"></div>
+      <div class="index" id="starGrid"></div>
     </div>
   </section>
 </main>
 
+<footer>
+  <div class="giant" aria-hidden="true">capsule<span>w</span></div>
+  <div class="foot-meta"><span>Travel wardrobe</span><span>Pack light ✳ Wear everything</span><span>© 2026</span></div>
+</footer>
+
 <nav>
-  <button id="nav-wardrobe" class="active" onclick="showTab('wardrobe')"><span class="ico">👗</span>Wardrobe</button>
-  <button id="nav-outfits" onclick="showTab('outfits')"><span class="ico">✨</span>Outfits</button>
-  <button id="nav-laundry" onclick="showTab('laundry')"><span class="ico">🧺</span>Laundry</button>
-  <button id="nav-insights" onclick="showTab('insights')"><span class="ico">💡</span>Insights</button>
+  <button id="nav-wardrobe" class="active" onclick="showTab('wardrobe')">Wardrobe</button>
+  <button id="nav-outfits" onclick="showTab('outfits')">Outfits</button>
+  <button id="nav-laundry" onclick="showTab('laundry')">Laundry</button>
+  <button id="nav-insights" onclick="showTab('insights')">Insights</button>
 </nav>
 
 <!-- ====== ITEM MODAL ====== -->
@@ -369,7 +431,7 @@
     <div class="field">
       <label>Photo</label>
       <div class="photo-drop" id="photoDrop" onclick="document.getElementById('f-photo').click()">
-        <span id="photoDropText">📷 Tap to add a photo — everything below fills in automatically</span>
+        <span id="photoDropText">Tap to add a photo — everything below fills in automatically</span>
         <img id="photoPreview" style="display:none">
       </div>
       <input type="file" id="f-photo" accept="image/*" style="display:none" onchange="photoPicked(event)">
@@ -436,12 +498,12 @@
 /* ================= DATA MODEL ================= */
 
 const CATEGORIES = [
-  { id: 'top',       label: 'Top',       emoji: '👕', defaultWears: 2  },
-  { id: 'bottom',    label: 'Bottom',    emoji: '👖', defaultWears: 5  },
-  { id: 'dress',     label: 'Dress',     emoji: '👗', defaultWears: 2  },
-  { id: 'outerwear', label: 'Outerwear', emoji: '🧥', defaultWears: 15 },
-  { id: 'shoes',     label: 'Shoes',     emoji: '👟', defaultWears: 25 },
-  { id: 'accessory', label: 'Accessory', emoji: '🧣', defaultWears: 25 },
+  { id: 'top',       label: 'Top',       tag: 'T', defaultWears: 2  },
+  { id: 'bottom',    label: 'Bottom',    tag: 'B', defaultWears: 5  },
+  { id: 'dress',     label: 'Dress',     tag: 'D', defaultWears: 2  },
+  { id: 'outerwear', label: 'Outerwear', tag: 'O', defaultWears: 15 },
+  { id: 'shoes',     label: 'Shoes',     tag: 'S', defaultWears: 25 },
+  { id: 'accessory', label: 'Accessory', tag: 'A', defaultWears: 25 },
 ];
 
 const COLORS = [
@@ -729,20 +791,24 @@ function itemCardHtml(item, opts = {}) {
   const partners = partnersOf(item).length;
   const wears = totalWears(item);
   return `
-  <div class="card">
-    ${item.photo ? `<img class="item-photo" src="${item.photo}" alt="">` : ''}
-    <h3><span>${cat.emoji}</span> ${esc(item.name)} ${swatchesHtml(item)}</h3>
-    <div class="meta">${cat.label} · ${item.styles.map(esc).join(', ')}</div>
-    <div class="chips">
-      <span class="chip">${partners} match${partners === 1 ? '' : 'es'}</span>
-      <span class="chip">worn ${wears}×</span>
-      ${left === 0 ? '<span class="chip bad">needs wash</span>' : ''}
+  <div class="row">
+    ${item.photo
+      ? `<img class="row-photo" src="${item.photo}" alt="">`
+      : `<div class="row-photo-empty">${cat.tag}</div>`}
+    <div class="row-main">
+      <div class="row-meta">${opts.index != null ? `<b>${String(opts.index + 1).padStart(3, '0')}</b> — ` : ''}${cat.label} · ${item.styles.map(esc).join(', ')}</div>
+      <div class="row-name">${esc(item.name)} ${swatchesHtml(item)}</div>
+      <div class="chips">
+        <span class="chip">${partners} match${partners === 1 ? '' : 'es'}</span>
+        <span class="chip">worn ${wears}×</span>
+        <span class="chip ${left === 0 ? 'bad' : ''}">${left === 0 ? 'needs wash' : `${left}/${per} wears left`}</span>
+      </div>
+      <div class="wearbar ${barClass}"><div style="width:${pct}%"></div></div>
+      ${opts.note ? `<div class="section-note">${opts.note}</div>` : ''}
     </div>
-    <div class="wearbar ${barClass}"><div style="width:${pct}%"></div></div>
-    <div class="wearlabel">${left} of ${per} clean wear${per === 1 ? '' : 's'} left</div>
-    <div class="card-actions">
-      <button class="btn small" onclick="wearItem('${item.id}')">👋 Wore it</button>
-      ${item.currentWears > 0 ? `<button class="btn small" onclick="washItem('${item.id}')">🫧 Washed</button>` : ''}
+    <div class="row-actions">
+      <button class="btn small" onclick="wearItem('${item.id}')">Wore it</button>
+      ${item.currentWears > 0 ? `<button class="btn small ghost" onclick="washItem('${item.id}')">Washed</button>` : ''}
       <button class="btn small ghost" onclick="openItemModal('${item.id}')">Edit</button>
     </div>
   </div>`;
@@ -758,16 +824,14 @@ function renderWardrobe() {
   if (sort === 'wears') items.sort((a, b) => totalWears(b) - totalWears(a));
   if (sort === 'leastworn') items.sort((a, b) => totalWears(a) - totalWears(b));
   if (sort === 'dirty') items.sort((a, b) => wearsLeft(a) - wearsLeft(b));
-  grid.innerHTML = items.map(i => itemCardHtml(i)).join('');
+  grid.innerHTML = items.map((i, idx) => itemCardHtml(i, { index: idx })).join('');
   document.getElementById('wardrobeEmpty').style.display = state.items.length ? 'none' : 'block';
 
   const outfits = generateOutfits();
   const orphanCount = state.items.filter(isOrphan).length;
-  document.getElementById('wardrobeStats').innerHTML = `
-    <div class="bigstat"><div class="num">${state.items.length}</div><div class="lbl">pieces</div></div>
-    <div class="bigstat"><div class="num">${outfits.length}</div><div class="lbl">outfits possible</div></div>
-    <div class="bigstat"><div class="num" style="color:${orphanCount ? 'var(--bad)' : 'var(--good)'}">${orphanCount}</div><div class="lbl">match nothing</div></div>
-    <div class="bigstat"><div class="num">${laundryRunwayDays()}</div><div class="lbl">days until laundry</div></div>`;
+  document.getElementById('wardrobeStats').innerHTML = state.items.length ? `
+    <div class="display">${state.items.length} pieces make<br><span class="hl">${outfits.length} outfit${outfits.length === 1 ? '' : 's'}.</span><br>${laundryRunwayDays()} days till laundry.</div>
+    ${orphanCount ? `<div class="display-note">✳ ${orphanCount} piece${orphanCount === 1 ? '' : 's'} match${orphanCount === 1 ? 'es' : ''} nothing right now — see insights.</div>` : ''}` : '';
 }
 
 /* ================= RENDER: OUTFITS ================= */
@@ -791,21 +855,23 @@ function renderOutfits() {
     const pieces = o.core.map(c =>
       `<span class="piece ${wearsLeft(c) === 0 ? 'dirty' : ''}">${c.photo
         ? `<img src="${c.photo}" style="width:26px;height:26px;object-fit:cover;border-radius:6px">`
-        : `<span class="emoji">${catOf(c).emoji}</span>`}${esc(c.name)} ${swatchesHtml(c)}</span>`
+        : `<span class="cat-tag">${catOf(c).tag}</span>`}${esc(c.name)} ${swatchesHtml(c)}</span>`
     ).join('<span class="plus">+</span>');
-    const shoesTxt = o.shoes.length ? `<span class="chip good">👟 ${o.shoes.map(s => esc(s.name)).join(' / ')}</span>` : '';
-    const outerTxt = o.outer.length ? `<span class="chip">🧥 ${o.outer.map(s => esc(s.name)).join(' / ')}</span>` : '';
+    const shoesTxt = o.shoes.length ? `<span class="chip good">+ ${o.shoes.map(s => esc(s.name)).join(' / ')}</span>` : '';
+    const outerTxt = o.outer.length ? `<span class="chip">+ ${o.outer.map(s => esc(s.name)).join(' / ')}</span>` : '';
     const wearable = o.core.every(c => wearsLeft(c) > 0);
     return `
-    <div class="card outfit-card" style="margin-bottom:10px">
-      <div class="pieces">${pieces}</div>
-      <div class="chips">
-        ${o.styles.map(s => `<span class="chip">${esc(s)}</span>`).join('')}
-        ${shoesTxt}${outerTxt}
-        ${wearable ? '' : '<span class="chip bad">a piece needs washing</span>'}
+    <div class="row">
+      <div class="row-main">
+        <div class="row-meta"><b>Look ${String(idx + 1).padStart(3, '0')}</b> — ${o.styles.map(esc).join(', ') || 'mixed'}</div>
+        <div class="pieces" style="margin-top:8px">${pieces}</div>
+        <div class="chips">
+          ${shoesTxt}${outerTxt}
+          ${wearable ? '' : '<span class="chip bad">a piece needs washing</span>'}
+        </div>
       </div>
-      <div class="card-actions">
-        <button class="btn small ${wearable ? 'primary' : ''}" onclick="wearOutfit(${idx})" ${wearable ? '' : 'disabled'}>👋 Wear today</button>
+      <div class="row-actions">
+        <button class="btn small ${wearable ? 'primary' : ''}" onclick="wearOutfit(${idx})" ${wearable ? '' : 'disabled'}>Wear today</button>
       </div>
     </div>`;
   }).join('');
@@ -821,7 +887,7 @@ function wearOutfit(idx) {
     (c.wearHistory = c.wearHistory || []).push(today());
   });
   save(); renderAll();
-  toast('Outfit logged — enjoy the day! ✨');
+  toast('Outfit logged — enjoy the day.');
 }
 
 /* ================= RENDER: LAUNDRY ================= */
@@ -836,17 +902,17 @@ function renderLaundry() {
     <div class="bigstat"><div class="num">${dirty.length}</div><div class="lbl">pieces in the basket</div></div>`;
   document.getElementById('laundryDetail').innerHTML =
     days <= 1
-      ? `<div class="section-note">⚠️ Time to find a laundromat — you're down to your last clean outfit${days === 0 ? ' (or past it!)' : ''}.</div>`
+      ? `<div class="section-note">Time to find a laundromat — you're down to your last clean outfit${days === 0 ? ' (or past it!)' : ''}.</div>`
       : `<div class="section-note">You're good for about <b>${days} days</b> before washing becomes urgent.</div>`;
   document.getElementById('dirtyGrid').innerHTML = dirty.length
     ? dirty.map(i => itemCardHtml(i)).join('')
-    : '<div class="empty" style="grid-column:1/-1">Nothing needs washing. 🎉</div>';
+    : '<div class="empty" style="grid-column:1/-1">Nothing needs washing.</div>';
 }
 
 function washAll() {
   state.items.forEach(i => i.currentWears = 0);
   save(); renderAll();
-  toast('Fresh start — everything is clean 🫧');
+  toast('Everything is clean.');
 }
 function washItem(id) {
   const i = state.items.find(x => x.id === id);
@@ -879,13 +945,13 @@ function renderInsights() {
           </div>
         </div>`;
       }).join('')
-    : `<div class="empty">${state.items.length ? 'Your wardrobe is already well connected — no purchase would significantly add outfits. 👏' : 'Add items first to get purchase suggestions.'}</div>`;
+    : `<div class="empty">${state.items.length ? 'Your wardrobe is already well connected — no purchase would significantly add outfits.' : 'Add items first to get purchase suggestions.'}</div>`;
 
   // Orphans
   const orphans = state.items.filter(isOrphan);
   document.getElementById('orphanGrid').innerHTML = orphans.length
     ? orphans.map(i => itemCardHtml(i)).join('')
-    : '<div class="empty" style="grid-column:1/-1">Every piece pairs with something. Nicely curated! 👌</div>';
+    : '<div class="empty" style="grid-column:1/-1">Every piece pairs with something. Nicely curated.</div>';
 
   // Underused
   const dusty = underusedItems();
@@ -895,10 +961,9 @@ function renderInsights() {
         const verdict = wears === 0
           ? 'Never worn since you added it. Plan an outfit around it this week — or donate it.'
           : 'Untouched for over two months. Give it one more chance, then let it go.';
-        return itemCardHtml(i).replace('<div class="card-actions">',
-          `<div class="section-note">💭 ${verdict}</div><div class="card-actions">`);
+        return itemCardHtml(i, { note: verdict });
       }).join('')
-    : `<div class="empty" style="grid-column:1/-1">${state.items.length < 4 ? 'Once you\'ve tracked wears for a few weeks, donation candidates show up here.' : 'Everything is getting used. 💪'}</div>`;
+    : `<div class="empty" style="grid-column:1/-1">${state.items.length < 4 ? 'Once you\'ve tracked wears for a few weeks, donation candidates show up here.' : 'Everything is getting used.'}</div>`;
 
   // Stars
   const stars = starItems();
@@ -914,14 +979,14 @@ let picked = { category: 'top', colors: [], styles: [] };
 
 function buildPickers() {
   document.getElementById('f-category').innerHTML = CATEGORIES.map(c =>
-    `<button type="button" class="pick" data-cat="${c.id}" onclick="pickCategory('${c.id}')">${c.emoji} ${c.label}</button>`).join('');
+    `<button type="button" class="pick" data-cat="${c.id}" onclick="pickCategory('${c.id}')">${c.label}</button>`).join('');
   document.getElementById('f-colors').innerHTML = COLORS.map(c =>
     `<button type="button" class="pick" data-color="${c.id}" onclick="togglePick('colors','${c.id}')"><span class="swatch" style="background:${c.hex}"></span>${c.label}</button>`).join('');
   document.getElementById('f-styles').innerHTML = STYLES.map(s =>
     `<button type="button" class="pick" data-style="${s}" onclick="togglePick('styles','${s}')">${s}</button>`).join('');
 
   const catSel = document.getElementById('filterCat');
-  CATEGORIES.forEach(c => catSel.insertAdjacentHTML('beforeend', `<option value="${c.id}">${c.emoji} ${c.label}</option>`));
+  CATEGORIES.forEach(c => catSel.insertAdjacentHTML('beforeend', `<option value="${c.id}">${c.label}</option>`));
   const styleSel = document.getElementById('outfitStyle');
   STYLES.forEach(s => styleSel.insertAdjacentHTML('beforeend', `<option value="${s}">${s}</option>`));
 }
@@ -1053,7 +1118,7 @@ function loadSample() {
     mk('Orange statement skirt', 'bottom', ['orange'], ['evening'], 3),
   ];
   save(); renderAll();
-  toast('Sample wardrobe loaded — explore the tabs!');
+  toast('Sample wardrobe loaded — explore the tabs.');
 }
 
 /* ================= SETTINGS: MODEL CHOICE + KEYS ================= */
@@ -1131,7 +1196,7 @@ function saveSettings() {
     else if (key === '') localStorage.removeItem(keyLs(prov));
   }
   closeSettings();
-  toast(getApiKey() ? `Photo analysis is on — using ${model.label.split(' — ')[0]} ✨` : 'Saved. Add an API key to enable photo analysis.');
+  toast(getApiKey() ? `Photo analysis is on — using ${model.label.split(' — ')[0]}` : 'Saved. Add an API key to enable photo analysis.');
 }
 
 /* ================= PHOTO ANALYSIS (Claude vision) ================= */
@@ -1197,7 +1262,7 @@ async function apiError(res, provider) {
     const j = await res.json();
     msg = j.error?.message || j.error?.type || msg;
   } catch (e) {}
-  if (res.status === 401 || res.status === 403) msg = `Invalid ${provider} API key — check ⚙️ Settings`;
+  if (res.status === 401 || res.status === 403) msg = `Invalid ${provider} API key — check Settings`;
   if (res.status === 429) msg = `${provider} rate limit reached — wait a moment and retry`;
   return msg;
 }
@@ -1329,7 +1394,7 @@ async function photoPicked(ev) {
   }
   if (!getApiKey()) {
     status.className = 'parse-status';
-    status.innerHTML = 'Photo attached. Add your API key in <b>⚙️ Settings</b> to have the fields fill in automatically.';
+    status.innerHTML = 'Photo attached. Add your API key in <b>Settings</b> to have the fields fill in automatically.';
     return;
   }
   status.className = 'parse-status working';
@@ -1347,7 +1412,7 @@ async function photoPicked(ev) {
     status.textContent = '✓ Analyzed — review below and save.';
   } catch (e) {
     status.className = 'parse-status err';
-    status.textContent = '⚠ ' + e.message + ' — you can still fill the fields manually.';
+    status.textContent = e.message + ' — you can still fill the fields manually.';
   }
 }
 
@@ -1392,11 +1457,11 @@ async function bulkImport(ev) {
   }
   bulkRunning = false;
   box.innerHTML = `<div class="card" style="margin-bottom:12px">
-    ✅ Added <b>${done}</b> item${done === 1 ? '' : 's'} from your photos${failed ? ` — ${failed} photo${failed === 1 ? '' : 's'} skipped (${esc(failures[0])})` : ''}.
+    ✓ Added <b>${done}</b> item${done === 1 ? '' : 's'} from your photos${failed ? ` — ${failed} photo${failed === 1 ? '' : 's'} skipped (${esc(failures[0])})` : ''}.
     <button class="btn small ghost" onclick="document.getElementById('bulkStatus').innerHTML=''" style="margin-left:8px">Dismiss</button>
   </div>`;
   renderAll();
-  toast(done ? `Wardrobe updated — ${generateOutfits().length} outfits possible ✨` : 'No items could be added');
+  toast(done ? `Wardrobe updated — ${generateOutfits().length} outfits possible` : 'No items could be added');
 }
 
 /* ================= DRESS ME ================= */
@@ -1407,7 +1472,7 @@ function dressMe() {
   const outfits = generateOutfits().filter(o => o.core.every(c => wearsLeft(c) > 0));
   const box = document.getElementById('dressMeResult');
   if (!outfits.length) {
-    box.innerHTML = `<div class="empty">No fully clean outfit available — check the Laundry tab. 🧺</div>`;
+    box.innerHTML = `<div class="empty">No fully clean outfit available — check the Laundry tab.</div>`;
     return;
   }
   // score: fewer lifetime wears = better (rotates underused pieces in), small bonus for clean headroom
@@ -1424,7 +1489,7 @@ function dressMe() {
   });
   save();
   const pieces = o.core.map(c =>
-    `<span class="piece">${c.photo ? `<img src="${c.photo}" style="width:26px;height:26px;object-fit:cover;border-radius:6px">` : `<span class="emoji">${catOf(c).emoji}</span>`}${esc(c.name)}</span>`
+    `<span class="piece">${c.photo ? `<img src="${c.photo}" style="width:26px;height:26px;object-fit:cover;border-radius:6px">` : `<span class="cat-tag">${catOf(c).tag}</span>`}${esc(c.name)}</span>`
   ).join('<span class="plus">+</span>');
   const shoesTxt = o.shoes.length ? ` with <b>${esc(o.shoes[0].name)}</b>` : '';
   const outerTxt = o.outer.length ? ` — grab the <b>${esc(o.outer[0].name)}</b> if it's chilly` : '';
@@ -1434,7 +1499,7 @@ function dressMe() {
     <button class="btn small ghost" onclick="undoDressMe('${o.core.map(c => c.id).join(',')}')">Undo</button>
   </div>`;
   renderWardrobe(); renderLaundry(); renderInsights();
-  toast('Outfit picked and logged — have a great day ✨');
+  toast('Outfit picked and logged — have a great day.');
 }
 
 function undoDressMe(ids) {
