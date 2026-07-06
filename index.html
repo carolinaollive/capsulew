@@ -28,6 +28,8 @@
     --chip: #DFDED8;
     --radius: 4px;
     --shadow: 0 1px 2px rgba(19,19,17,.04);
+    --ease: cubic-bezier(.22, 1, .36, 1);
+    --spring: cubic-bezier(.34, 1.56, .64, 1);
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -73,6 +75,7 @@
     font-size: .64rem; font-weight: 500; letter-spacing: .16em; text-transform: uppercase;
   }
   .marquee-inner span { margin: 0 1.4em; }
+  .marquee:hover .marquee-inner { animation-play-state: paused; }
   @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
   .eyebrow {
     font-size: .66rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
@@ -90,17 +93,34 @@
     display: flex; justify-content: center; gap: 4px; padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
   }
   nav { border-top: 1px solid var(--rule); }
+  #navBlob {
+    position: absolute; top: 6px; height: calc(100% - 12px - env(safe-area-inset-bottom));
+    left: 0; width: 0; background: var(--accent); border-radius: 999px; z-index: 0;
+    transition: left .5s var(--spring), width .5s var(--spring);
+  }
   nav button {
     flex: 1; max-width: 180px; border: none; background: none; color: var(--ink-soft);
     font-family: inherit; font-size: .74rem; font-weight: 500; letter-spacing: .04em;
     text-transform: lowercase; padding: 12px 4px; border-radius: 999px; cursor: pointer; line-height: 1.2;
+    position: relative; z-index: 1; transition: color .3s var(--ease);
   }
   nav button .ico { display: none; }
-  nav button.active { color: var(--accent-ink); background: var(--accent); font-weight: 700; }
+  nav button.active { color: var(--accent-ink); background: none; font-weight: 700; }
 
   .tab { display: none; }
-  .tab.active { display: block; animation: fade .18s ease; }
-  @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
+  .tab.active { display: block; }
+  @media (prefers-reduced-motion: no-preference) {
+    .tab.anim .eyebrow, .tab.anim h2, .tab.anim .sub, .tab.anim .display, .tab.anim .display-note,
+    .tab.anim .btn.block, .tab.anim .toolbar, .tab.anim .row, .tab.anim .card,
+    .tab.anim .suggestion, .tab.anim .bigstat, .tab.anim .empty, .tab.anim .section-note {
+      animation: rise .55s var(--ease) backwards;
+      animation-delay: calc(var(--i, 0) * 45ms);
+    }
+  }
+  @keyframes rise { from { opacity: 0; transform: translateY(16px); } }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  }
 
   h2 { font-size: 1.75rem; font-weight: 700; letter-spacing: -.035em; margin: 18px 0 4px; }
   .sub { color: var(--ink-soft); font-size: .88rem; margin-bottom: 14px; max-width: 60ch; }
@@ -110,10 +130,10 @@
     border: 1px solid var(--rule); background: transparent; color: var(--ink);
     font-family: inherit; font-weight: 500;
     padding: 8px 16px; border-radius: 999px; font-size: .84rem; cursor: pointer;
-    transition: background .12s ease, color .12s ease, transform .06s ease;
+    transition: background .3s var(--ease), color .3s var(--ease), transform .35s var(--spring), border-color .3s var(--ease);
   }
   .btn:hover { background: var(--ink); color: var(--bg); }
-  .btn:active { transform: scale(.97); }
+  .btn:active { transform: scale(.95); }
   .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--rule); font-weight: 700; }
   .btn.primary:hover { background: var(--ink); color: var(--accent); }
   .btn.small { padding: 5px 12px; font-size: .76rem; }
@@ -149,7 +169,7 @@
   .chip.good { color: var(--good); } .chip.warn { color: var(--warn); } .chip.bad { color: var(--bad); }
 
   .wearbar { height: 4px; border-radius: 0; background: var(--chip); overflow: hidden; margin: 10px 0 4px; }
-  .wearbar > div { height: 100%; border-radius: 0; background: var(--good); transition: width .3s ease; }
+  .wearbar > div { height: 100%; border-radius: 0; background: var(--good); transition: width .7s var(--ease); }
   .wearbar.mid > div { background: var(--warn); }
   .wearbar.low > div { background: var(--bad); }
   .wearlabel { font-size: .72rem; color: var(--ink-soft); margin-bottom: 8px; }
@@ -194,10 +214,12 @@
   .modal-bg.open { display: flex; }
   .modal {
     background: var(--card); width: 100%; max-width: 560px; max-height: 88vh; overflow-y: auto;
-    border-radius: 10px 10px 0 0; padding: 20px 20px 30px; animation: up .2s ease;
+    border-radius: 10px 10px 0 0; padding: 20px 20px 30px; animation: up .5s var(--spring);
   }
   @media (min-width: 620px) { .modal-bg { align-items: center; } .modal { border-radius: 10px; } }
-  @keyframes up { from { transform: translateY(30px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes up { from { transform: translateY(44px) scale(.985); opacity: 0; } to { transform: none; opacity: 1; } }
+  .modal-bg.open { animation: bgfade .35s ease; }
+  @keyframes bgfade { from { background: rgba(20,16,10,0); } }
   .modal h2 { margin-top: 0; }
   .field { margin: 13px 0; }
   .field label { display: block; font-size: .64rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 7px; color: var(--ink-soft); }
@@ -207,7 +229,9 @@
     border: 1px solid var(--line); background: transparent; color: var(--ink);
     font-family: inherit; border-radius: 999px; padding: 6px 12px; font-size: .8rem; cursor: pointer;
     display: inline-flex; align-items: center; gap: 6px;
+    transition: background .3s var(--ease), border-color .3s var(--ease), transform .3s var(--spring);
   }
+  .pick:active { transform: scale(.94); }
   .pick.on { border-color: var(--rule); background: var(--accent); color: var(--accent-ink); font-weight: 600; }
   .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
 
@@ -215,8 +239,16 @@
 
   /* Editorial index rows */
   .index { border-top: 1px solid var(--rule); }
-  .row { display: flex; gap: 14px; padding: 16px 0; border-bottom: 1px solid var(--line); align-items: flex-start; }
+  .row {
+    display: flex; gap: 14px; padding: 16px 0; border-bottom: 1px solid var(--line);
+    align-items: flex-start; transition: transform .45s var(--ease);
+  }
   .row-photo { width: 76px; height: 76px; object-fit: cover; border-radius: 2px; flex: none; }
+  .row-photo, .row-photo-empty { transition: transform .45s var(--ease); }
+  @media (hover: hover) {
+    .row:hover { transform: translateX(6px); }
+    .row:hover .row-photo, .row:hover .row-photo-empty { transform: scale(1.05) rotate(-1.5deg); }
+  }
   .row-photo-empty {
     text-transform: uppercase;
     display: flex; align-items: center; justify-content: center; width: 76px; height: 76px; flex: none;
@@ -271,7 +303,8 @@
     font-size: 1.05rem; font-weight: 700; letter-spacing: -.01em;
     background: var(--ink); color: var(--bg); border-color: var(--ink); border-radius: 4px;
   }
-  .btn.block::after { content: "\2192"; float: right; }
+  .btn.block::after { content: "\2192"; float: right; transition: transform .4s var(--spring); }
+  .btn.block:hover::after { transform: translateX(8px); }
   .btn.block:hover { background: var(--accent); color: var(--accent-ink); }
 
   /* Giant footer wordmark */
@@ -325,9 +358,11 @@
   .toast {
     position: fixed; left: 50%; transform: translateX(-50%); bottom: 86px; z-index: 80;
     background: var(--ink); color: var(--bg); padding: 10px 18px; border-radius: 4px;
-    font-size: .85rem; opacity: 0; pointer-events: none; transition: opacity .25s ease;
+    font-size: .85rem; opacity: 0; pointer-events: none;
+    transform: translate(-50%, 12px);
+    transition: opacity .35s var(--ease), transform .5s var(--spring);
   }
-  .toast.show { opacity: 1; }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
   .section-note { font-size: .8rem; color: var(--ink-soft); margin: 4px 0 10px; }
 </style>
 </head>
@@ -440,6 +475,7 @@
 </footer>
 
 <nav>
+  <div id="navBlob" aria-hidden="true"></div>
   <button id="nav-wardrobe" class="active" onclick="showTab('wardrobe')">Wardrobe</button>
   <button id="nav-outfits" onclick="showTab('outfits')">Outfits</button>
   <button id="nav-laundry" onclick="showTab('laundry')">Laundry</button>
@@ -794,11 +830,25 @@ function toast(msg) {
   clearTimeout(t._h);
   t._h = setTimeout(() => t.classList.remove('show'), 2200);
 }
+function moveNavBlob() {
+  const blob = document.getElementById('navBlob');
+  const btn = document.querySelector('nav button.active');
+  if (!blob || !btn) return;
+  blob.style.left = btn.offsetLeft + 'px';
+  blob.style.width = btn.offsetWidth + 'px';
+}
+window.addEventListener('resize', moveNavBlob);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(moveNavBlob);
+
 function showTab(name) {
-  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active', 'anim'));
   document.querySelectorAll('nav button').forEach(el => el.classList.remove('active'));
-  document.getElementById('tab-' + name).classList.add('active');
+  const tab = document.getElementById('tab-' + name);
+  tab.classList.add('active', 'anim');
+  clearTimeout(showTab._t);
+  showTab._t = setTimeout(() => tab.classList.remove('anim'), 1300);
   document.getElementById('nav-' + name).classList.add('active');
+  moveNavBlob();
   renderAll();
 }
 
@@ -813,7 +863,7 @@ function itemCardHtml(item, opts = {}) {
   const partners = partnersOf(item).length;
   const wears = totalWears(item);
   return `
-  <div class="row">
+  <div class="row" style="--i:${Math.min(opts.index ?? opts.d ?? 0, 14)}">
     ${item.photo
       ? `<img class="row-photo" src="${item.photo}" alt="">`
       : `<div class="row-photo-empty">${cat.tag}</div>`}
@@ -888,7 +938,7 @@ function renderOutfits() {
     const outerTxt = o.outer.length ? `<span class="chip">+ ${o.outer.map(s => esc(s.name)).join(' / ')}</span>` : '';
     const wearable = o.core.every(c => wearsLeft(c) > 0);
     return `
-    <div class="row">
+    <div class="row" style="--i:${Math.min(idx, 14)}">
       <div class="row-main">
         <div class="row-meta"><b>Look ${String(idx + 1).padStart(3, '0')}</b> — ${o.styles.map(esc).join(', ') || 'mixed'}</div>
         <div class="pieces" style="margin-top:8px">${pieces}</div>
@@ -924,15 +974,15 @@ function renderLaundry() {
   const dirty = state.items.filter(i => wearsLeft(i) === 0);
   const cleanOutfits = generateOutfits().filter(o => o.core.every(c => wearsLeft(c) > 0)).length;
   document.getElementById('laundryStats').innerHTML = `
-    <div class="bigstat"><div class="num" style="color:${days <= 1 ? 'var(--bad)' : days <= 3 ? 'var(--warn)' : 'var(--good)'}">${days}</div><div class="lbl">day${days === 1 ? '' : 's'} of clean outfits left</div></div>
-    <div class="bigstat"><div class="num">${cleanOutfits}</div><div class="lbl">outfits fully clean now</div></div>
-    <div class="bigstat"><div class="num">${dirty.length}</div><div class="lbl">pieces in the basket</div></div>`;
+    <div class="bigstat" style="--i:0"><div class="num" style="color:${days <= 1 ? 'var(--bad)' : days <= 3 ? 'var(--warn)' : 'var(--good)'}">${days}</div><div class="lbl">day${days === 1 ? '' : 's'} of clean outfits left</div></div>
+    <div class="bigstat" style="--i:1"><div class="num">${cleanOutfits}</div><div class="lbl">outfits fully clean now</div></div>
+    <div class="bigstat" style="--i:2"><div class="num">${dirty.length}</div><div class="lbl">pieces in the basket</div></div>`;
   document.getElementById('laundryDetail').innerHTML =
     days <= 1
       ? `<div class="section-note">Time to find a laundromat — you're down to your last clean outfit${days === 0 ? ' (or past it!)' : ''}.</div>`
       : `<div class="section-note">You're good for about <b>${days} days</b> before washing becomes urgent.</div>`;
   document.getElementById('dirtyGrid').innerHTML = dirty.length
-    ? dirty.map(i => itemCardHtml(i)).join('')
+    ? dirty.map((i, idx) => itemCardHtml(i, { d: idx })).join('')
     : '<div class="empty" style="grid-column:1/-1">Nothing needs washing.</div>';
 }
 
@@ -963,7 +1013,7 @@ function renderInsights() {
     ? shop.map((s, i) => {
         const col = colorOf(s.col), cat = CATEGORIES.find(c => c.id === s.cat);
         return `
-        <div class="suggestion">
+        <div class="suggestion" style="--i:${i}">
           <div class="rank">${i + 1}</div>
           <div>
             <b>${col.label} ${esc(s.style)} ${cat.label.toLowerCase()}</b>
@@ -977,25 +1027,25 @@ function renderInsights() {
   // Orphans
   const orphans = state.items.filter(isOrphan);
   document.getElementById('orphanGrid').innerHTML = orphans.length
-    ? orphans.map(i => itemCardHtml(i)).join('')
+    ? orphans.map((i, idx) => itemCardHtml(i, { d: idx })).join('')
     : '<div class="empty" style="grid-column:1/-1">Every piece pairs with something. Nicely curated.</div>';
 
   // Underused
   const dusty = underusedItems();
   document.getElementById('underusedGrid').innerHTML = dusty.length
-    ? dusty.map(i => {
+    ? dusty.map((i, idx) => {
         const wears = totalWears(i);
         const verdict = wears === 0
           ? 'Never worn since you added it. Plan an outfit around it this week — or donate it.'
           : 'Untouched for over two months. Give it one more chance, then let it go.';
-        return itemCardHtml(i, { note: verdict });
+        return itemCardHtml(i, { note: verdict, d: idx });
       }).join('')
     : `<div class="empty" style="grid-column:1/-1">${state.items.length < 4 ? 'Once you\'ve tracked wears for a few weeks, donation candidates show up here.' : 'Everything is getting used.'}</div>`;
 
   // Stars
   const stars = starItems();
   document.getElementById('starGrid').innerHTML = stars.length
-    ? stars.map(x => itemCardHtml(x.item)).join('')
+    ? stars.map((x, idx) => itemCardHtml(x.item, { d: idx })).join('')
     : '<div class="empty" style="grid-column:1/-1">Log some wears and your MVPs will appear here.</div>';
 }
 
@@ -1555,6 +1605,15 @@ document.getElementById('marqueeInner').innerHTML = Array(2).fill(
   '<span>Pack light</span>✳<span>Wear everything</span>✳<span>Wash less</span>✳<span>Buy smart</span>✳<span>Donate the rest</span>✳'
 ).join('');
 renderAll();
+(function initMotion() {
+  const tab = document.querySelector('.tab.active');
+  if (tab) {
+    tab.classList.add('anim');
+    setTimeout(() => tab.classList.remove('anim'), 1300);
+  }
+  moveNavBlob();
+  setTimeout(moveNavBlob, 300);
+})();
 </script>
 </body>
 </html>
