@@ -1,4 +1,4 @@
-# CapsuleW
+# trawa
 
 A digital capsule wardrobe for people who live out of a suitcase. Capped at a configurable limit (default 33 pieces — a capsule stays a capsule) with per-item weight estimates rolling up to total pack weight. Track every piece of clothing you carry, see every outfit it can make, know exactly how many days you have before laundry becomes urgent, and get honest advice about what to buy — and what to donate.
 

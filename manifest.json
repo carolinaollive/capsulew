@@ -1,7 +1,7 @@
 {
-  "name": "CapsuleW — Travel Wardrobe",
-  "short_name": "CapsuleW",
-  "description": "Your travel capsule wardrobe: photo-parsed inventory, outfit matching, laundry countdown, and shopping insights.",
+  "name": "trawa — travel wardrobe",
+  "short_name": "trawa",
+  "description": "Your digital capsule wardrobe: photo-parsed inventory, fits, laundry countdown, pack weight, and what to cop next.",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",

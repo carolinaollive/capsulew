@@ -1,4 +1,4 @@
-// Shared "house" photo analysis for CapsuleW.
+// Shared "house" photo analysis for trawa.
 // Set ANTHROPIC_API_KEY (required) and ACCESS_CODE (optional) in the
 // Vercel project's environment variables. The prompt and schema are
 // fixed server-side so this endpoint can't be repurposed as a general
