@@ -296,6 +296,16 @@
   }
   .display .hl { background: var(--accent); color: var(--accent-ink); border-radius: .06em; padding: 0 .08em; }
   .display-note { font-size: .82rem; color: var(--ink-soft); margin: 0 0 10px; }
+  .cap-strip { margin: 16px 0 4px; }
+  .cap-meta {
+    display: flex; justify-content: space-between; gap: 10px; margin-bottom: 7px;
+    font-size: .64rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .cap-meta b { color: var(--ink); }
+  .cap-bar { height: 4px; background: var(--chip); overflow: hidden; }
+  .cap-bar > div { height: 100%; background: var(--ink); transition: width 1.6s var(--ease); }
+  .cap-bar.full > div { background: var(--bad); }
 
   /* Block CTA */
   .btn.block {
@@ -383,7 +393,7 @@
 <main>
   <!-- ====== WARDROBE ====== -->
   <section id="tab-wardrobe" class="tab active">
-    <div class="eyebrow"><b>0/1</b> Wardrobe</div>
+    <div class="eyebrow"><b>0/1</b> The capsule</div>
     <div id="wardrobeStats"></div>
     <button class="btn block" onclick="startBulkImport()">Add from photos — auto-analyzed</button>
     <div class="toolbar">
@@ -402,21 +412,21 @@
     <div id="bulkStatus"></div>
     <div class="index" id="wardrobeGrid"></div>
     <div class="empty" id="wardrobeEmpty" style="display:none">
-      Your wardrobe is empty.<br><br>
+      Empty capsule.<br><br>
       <button class="btn primary" onclick="startBulkImport()">Snap or pick photos of your clothes</button><br><br>
-      Every photo is analyzed automatically — category, colors, style, wash needs.<br><br>
+      Every photo gets auto-read — category, colors, style, wash needs, weight.<br><br>
       <button class="btn small" onclick="openItemModal()">Add manually instead</button>
       &nbsp;
-      <button class="btn small" onclick="loadSample()">Load a sample wardrobe</button>
+      <button class="btn small" onclick="loadSample()">Load a sample capsule</button>
     </div>
   </section>
 
   <!-- ====== OUTFITS ====== -->
   <section id="tab-outfits" class="tab">
-    <div class="eyebrow"><b>0/2</b> Outfits</div>
-    <h2>Outfit combinations</h2>
-    <p class="sub">Every wearable pairing in your wardrobe, matched by color and style. Or skip the browsing entirely:</p>
-    <button class="btn block" onclick="dressMe()">Dress me today</button>
+    <div class="eyebrow"><b>0/2</b> Fits</div>
+    <h2>The rotation</h2>
+    <p class="sub">Every fit your capsule can make, matched by color and style. Or skip the browsing:</p>
+    <button class="btn block" onclick="dressMe()">Pick my fit</button>
     <div id="dressMeResult"></div>
     <div class="toolbar">
       <select id="outfitStyle" onchange="renderOutfits()">
@@ -432,8 +442,8 @@
   <!-- ====== LAUNDRY ====== -->
   <section id="tab-laundry" class="tab">
     <div class="eyebrow"><b>0/3</b> Laundry</div>
-    <h2>Laundry runway</h2>
-    <p class="sub">How long you can keep dressing before you must find a washing machine.</p>
+    <h2>Days clean</h2>
+    <p class="sub">How long you can keep dressing before a washing machine finds you.</p>
     <div class="statrow" id="laundryStats"></div>
     <div id="laundryDetail"></div>
     <h2>Needs washing</h2>
@@ -447,23 +457,23 @@
   <section id="tab-insights" class="tab">
     <div class="eyebrow"><b>0/4</b> Insights</div>
     <div class="insight-block">
-      <h2>Smart shopping list</h2>
-      <p class="sub">Pieces that would unlock the most new outfits from what you already own.</p>
+      <h2>What to cop next</h2>
+      <p class="sub">Pieces that unlock the most new fits from what you already own.</p>
       <div id="shoppingList"></div>
     </div>
     <div class="insight-block">
-      <h2>Matches nothing</h2>
-      <p class="sub">These pieces can't form a single outfit with the rest of your wardrobe. Buy them a partner (see the shopping list) — or let them go.</p>
+      <h2>Dead weight</h2>
+      <p class="sub">These pieces can't make a single fit with the rest of the capsule. Cop them a partner — or cut them loose.</p>
       <div class="index" id="orphanGrid"></div>
     </div>
     <div class="insight-block">
-      <h2>Underused — wear it or donate it</h2>
-      <p class="sub">Items you've barely touched. If a piece keeps sitting here trip after trip, it's earning its weight in your luggage without paying rent.</p>
+      <h2>Benchwarmers</h2>
+      <p class="sub">Barely touched. If a piece rides in your luggage trip after trip without getting worn, it's not paying rent. Wear it or donate it.</p>
       <div class="index" id="underusedGrid"></div>
     </div>
     <div class="insight-block">
-      <h2>Your workhorses</h2>
-      <p class="sub">Most worn and most versatile — buy more like these.</p>
+      <h2>Heavy rotation</h2>
+      <p class="sub">Most worn, most versatile — cop more like these.</p>
       <div class="index" id="starGrid"></div>
     </div>
   </section>
@@ -476,8 +486,8 @@
 
 <nav>
   <div id="navBlob" aria-hidden="true"></div>
-  <button id="nav-wardrobe" class="active" onclick="showTab('wardrobe')">Wardrobe</button>
-  <button id="nav-outfits" onclick="showTab('outfits')">Outfits</button>
+  <button id="nav-wardrobe" class="active" onclick="showTab('wardrobe')">Capsule</button>
+  <button id="nav-outfits" onclick="showTab('outfits')">Fits</button>
   <button id="nav-laundry" onclick="showTab('laundry')">Laundry</button>
   <button id="nav-insights" onclick="showTab('insights')">Insights</button>
 </nav>
@@ -511,9 +521,15 @@
       <label>Style (pick all that apply)</label>
       <div class="pick-row" id="f-styles"></div>
     </div>
-    <div class="field">
-      <label>Wears before it needs washing</label>
-      <input type="number" id="f-wears" min="1" max="99" value="2">
+    <div class="field" style="display:flex;gap:12px">
+      <div style="flex:1">
+        <label>Wears before washing</label>
+        <input type="number" id="f-wears" min="1" max="99" value="2">
+      </div>
+      <div style="flex:1">
+        <label>Weight — grams</label>
+        <input type="number" id="f-weight" min="10" max="5000" step="10" value="200">
+      </div>
     </div>
     <div class="modal-actions">
       <button class="btn danger" id="f-delete" style="display:none;margin-right:auto" onclick="deleteItem()">Delete</button>
@@ -531,6 +547,11 @@
       <label>AI model for photo analysis</label>
       <select id="f-model" style="width:100%" onchange="modelChanged()"></select>
       <div class="section-note" id="f-modelnote" style="margin-top:6px"></div>
+    </div>
+    <div class="field">
+      <label>Capsule limit — max pieces</label>
+      <input type="number" id="f-cap" min="5" max="100">
+      <div class="section-note" style="margin-top:6px">A capsule stays a capsule. 33 is the classic number.</div>
     </div>
     <div class="field">
       <label id="f-keylabel">API key</label>
@@ -556,12 +577,12 @@
 /* ================= DATA MODEL ================= */
 
 const CATEGORIES = [
-  { id: 'top',       label: 'Top',       tag: 'T', defaultWears: 2  },
-  { id: 'bottom',    label: 'Bottom',    tag: 'B', defaultWears: 5  },
-  { id: 'dress',     label: 'Dress',     tag: 'D', defaultWears: 2  },
-  { id: 'outerwear', label: 'Outerwear', tag: 'O', defaultWears: 15 },
-  { id: 'shoes',     label: 'Shoes',     tag: 'S', defaultWears: 25 },
-  { id: 'accessory', label: 'Accessory', tag: 'A', defaultWears: 25 },
+  { id: 'top',       label: 'Top',       tag: 'T', defaultWears: 2,  defaultWeight: 200  },
+  { id: 'bottom',    label: 'Bottom',    tag: 'B', defaultWears: 5,  defaultWeight: 450  },
+  { id: 'dress',     label: 'Dress',     tag: 'D', defaultWears: 2,  defaultWeight: 350  },
+  { id: 'outerwear', label: 'Outerwear', tag: 'O', defaultWears: 15, defaultWeight: 900  },
+  { id: 'shoes',     label: 'Shoes',     tag: 'S', defaultWears: 25, defaultWeight: 800  },
+  { id: 'accessory', label: 'Accessory', tag: 'A', defaultWears: 25, defaultWeight: 150  },
 ];
 
 const COLORS = [
@@ -623,6 +644,14 @@ function uid() { return 'i' + Date.now().toString(36) + Math.random().toString(3
 function catOf(item) { return CATEGORIES.find(c => c.id === item.category) || CATEGORIES[0]; }
 function colorOf(id) { return COLORS.find(c => c.id === id); }
 function today() { return new Date().toISOString().slice(0, 10); }
+
+const CAP_LS = 'capsulew-cap';
+function capLimit() {
+  const v = parseInt(localStorage.getItem(CAP_LS), 10);
+  return (v >= 5 && v <= 100) ? v : 33;
+}
+function itemWeight(i) { return i.weightGrams || catOf(i).defaultWeight || 300; }
+function packWeightKg() { return state.items.reduce((sum, i) => sum + itemWeight(i), 0) / 1000; }
 
 /* ================= MATCHING ENGINE ================= */
 
@@ -868,7 +897,7 @@ function itemCardHtml(item, opts = {}) {
       ? `<img class="row-photo" src="${item.photo}" alt="">`
       : `<div class="row-photo-empty">${cat.tag}</div>`}
     <div class="row-main">
-      <div class="row-meta">${opts.index != null ? `<b>${String(opts.index + 1).padStart(3, '0')}</b> — ` : ''}${cat.label} · ${item.styles.map(esc).join(', ')}</div>
+      <div class="row-meta">${opts.index != null ? `<b>${String(opts.index + 1).padStart(3, '0')}</b> — ` : ''}${cat.label} · ${item.styles.map(esc).join(', ')} · ${itemWeight(item)} g</div>
       <div class="row-name">${esc(item.name)} ${swatchesHtml(item)}</div>
       <div class="chips">
         <span class="chip">${partners} match${partners === 1 ? '' : 'es'}</span>
@@ -902,13 +931,19 @@ function renderWardrobe() {
   const outfits = generateOutfits();
   const orphanCount = state.items.filter(isOrphan).length;
   const n = state.items.length;
+  const cap = capLimit();
+  const kg = packWeightKg();
   const days = laundryRunwayDays();
   const hero = !n ? '' : !outfits.length
-    ? `<div class="display">${n} piece${n === 1 ? '' : 's'} so far.<br><span class="hl">No outfits yet.</span><br>Add tops & bottoms.</div>`
-    : `<div class="display">${n} piece${n === 1 ? '' : 's'} make${n === 1 ? 's' : ''}<br><span class="hl">${outfits.length} outfit${outfits.length === 1 ? '' : 's'}.</span><br>${days} day${days === 1 ? '' : 's'} till laundry.</div>`;
+    ? `<div class="display">${n} piece${n === 1 ? '' : 's'} in.<br><span class="hl">No fits yet.</span><br>Need tops & bottoms.</div>`
+    : `<div class="display">${n} piece${n === 1 ? '' : 's'}.<br><span class="hl">${outfits.length} fit${outfits.length === 1 ? '' : 's'}.</span><br>${days} day${days === 1 ? '' : 's'} clean.</div>`;
   document.getElementById('wardrobeStats').innerHTML = n ? `
     ${hero}
-    ${orphanCount ? `<div class="display-note">✳ ${orphanCount} piece${orphanCount === 1 ? '' : 's'} match${orphanCount === 1 ? 'es' : ''} nothing right now — see insights.</div>` : ''}` : '';
+    ${orphanCount ? `<div class="display-note">✳ ${orphanCount} piece${orphanCount === 1 ? '' : 's'} riding dead weight — see insights.</div>` : ''}
+    <div class="cap-strip">
+      <div class="cap-meta"><span><b>${n}/${cap}</b> slots</span><span>~${kg.toFixed(1)} kg pack weight</span></div>
+      <div class="cap-bar ${n >= cap ? 'full' : ''}"><div style="width:${Math.min(100, n / cap * 100)}%"></div></div>
+    </div>` : '';
 }
 
 /* ================= RENDER: OUTFITS ================= */
@@ -924,8 +959,8 @@ function renderOutfits() {
 
   if (!outfits.length) {
     list.innerHTML = `<div class="empty">${state.items.length
-      ? 'No outfits match this filter. ' + (cleanOnly ? 'Everything may need washing — check the Laundry tab.' : 'Try another style, or check the Insights tab to see what to buy.')
-      : 'Add some items first — outfits appear here automatically.'}</div>`;
+      ? 'No fits match this filter. ' + (cleanOnly ? 'Everything may need washing — check the Laundry tab.' : 'Try another style, or check insights for what to cop.')
+      : 'Add pieces first — fits show up here on their own.'}</div>`;
     return;
   }
   list.innerHTML = outfits.map((o, idx) => {
@@ -1018,17 +1053,17 @@ function renderInsights() {
           <div>
             <b>${col.label} ${esc(s.style)} ${cat.label.toLowerCase()}</b>
             <span class="swatch" style="background:${col.hex};vertical-align:middle;margin-left:4px"></span>
-            <div class="why">Unlocks <b>${s.gain}</b> new outfit${s.gain === 1 ? '' : 's'}${s.rescued ? ` and rescues <b>${s.rescued}</b> piece${s.rescued === 1 ? '' : 's'} that currently match nothing` : ''}.</div>
+            <div class="why">Unlocks <b>${s.gain}</b> new fit${s.gain === 1 ? '' : 's'}${s.rescued ? ` and revives <b>${s.rescued}</b> dead-weight piece${s.rescued === 1 ? '' : 's'}` : ''}.</div>
           </div>
         </div>`;
       }).join('')
-    : `<div class="empty">${state.items.length ? 'Your wardrobe is already well connected — no purchase would significantly add outfits.' : 'Add items first to get purchase suggestions.'}</div>`;
+    : `<div class="empty">${state.items.length ? 'Capsule is already tight — nothing worth copping.' : 'Add items first to get purchase suggestions.'}</div>`;
 
   // Orphans
   const orphans = state.items.filter(isOrphan);
   document.getElementById('orphanGrid').innerHTML = orphans.length
     ? orphans.map((i, idx) => itemCardHtml(i, { d: idx })).join('')
-    : '<div class="empty" style="grid-column:1/-1">Every piece pairs with something. Nicely curated.</div>';
+    : '<div class="empty" style="grid-column:1/-1">Every piece pulls its weight. Tight capsule.</div>';
 
   // Underused
   const dusty = underusedItems();
@@ -1040,13 +1075,13 @@ function renderInsights() {
           : 'Untouched for over two months. Give it one more chance, then let it go.';
         return itemCardHtml(i, { note: verdict, d: idx });
       }).join('')
-    : `<div class="empty" style="grid-column:1/-1">${state.items.length < 4 ? 'Once you\'ve tracked wears for a few weeks, donation candidates show up here.' : 'Everything is getting used.'}</div>`;
+    : `<div class="empty" style="grid-column:1/-1">${state.items.length < 4 ? 'Track wears for a few weeks and the benchwarmers show up here.' : 'Everything is in play.'}</div>`;
 
   // Stars
   const stars = starItems();
   document.getElementById('starGrid').innerHTML = stars.length
     ? stars.map((x, idx) => itemCardHtml(x.item, { d: idx })).join('')
-    : '<div class="empty" style="grid-column:1/-1">Log some wears and your MVPs will appear here.</div>';
+    : '<div class="empty" style="grid-column:1/-1">Log some wears and your MVPs show up here.</div>';
 }
 
 /* ================= ITEM MODAL ================= */
@@ -1071,7 +1106,10 @@ function buildPickers() {
 function pickCategory(id) {
   picked.category = id;
   const cat = CATEGORIES.find(c => c.id === id);
-  if (!editingId) document.getElementById('f-wears').value = cat.defaultWears;
+  if (!editingId) {
+    document.getElementById('f-wears').value = cat.defaultWears;
+    document.getElementById('f-weight').value = cat.defaultWeight;
+  }
   refreshPickers();
 }
 function togglePick(kind, id) {
@@ -1099,6 +1137,7 @@ function openItemModal(id) {
     ? { category: item.category, colors: item.colors.slice(), styles: item.styles.slice() }
     : { category: 'top', colors: [], styles: ['casual'] };
   document.getElementById('f-wears').value = item ? item.wearsPerWash : catOf({ category: picked.category }).defaultWears;
+  document.getElementById('f-weight').value = item ? (item.weightGrams || catOf(item).defaultWeight) : catOf({ category: picked.category }).defaultWeight;
   pendingPhoto = item ? item.photo || null : null;
   const preview = document.getElementById('photoPreview');
   preview.src = pendingPhoto || '';
@@ -1119,14 +1158,19 @@ function saveItem() {
   if (!picked.colors.length) { toast('Pick at least one color'); return; }
   if (!picked.styles.length) { toast('Pick at least one style'); return; }
   const wears = Math.min(99, Math.max(1, parseInt(document.getElementById('f-wears').value, 10) || 1));
+  const weight = Math.min(5000, Math.max(10, parseInt(document.getElementById('f-weight').value, 10) || 0)) || null;
   if (editingId) {
     const item = state.items.find(x => x.id === editingId);
-    Object.assign(item, { name, category: picked.category, colors: picked.colors.slice(), styles: picked.styles.slice(), wearsPerWash: wears, photo: pendingPhoto || item.photo || null });
+    Object.assign(item, { name, category: picked.category, colors: picked.colors.slice(), styles: picked.styles.slice(), wearsPerWash: wears, weightGrams: weight, photo: pendingPhoto || item.photo || null });
   } else {
+    if (state.items.length >= capLimit()) {
+      toast(`capsule's full — ${capLimit()} pieces max. donate something first.`);
+      return;
+    }
     state.items.push({
       id: uid(), name, category: picked.category,
       colors: picked.colors.slice(), styles: picked.styles.slice(),
-      wearsPerWash: wears, currentWears: 0, wearHistory: [],
+      wearsPerWash: wears, weightGrams: weight, currentWears: 0, wearHistory: [],
       photo: pendingPhoto || null,
       createdAt: new Date().toISOString(),
     });
@@ -1195,7 +1239,7 @@ function loadSample() {
     mk('Orange statement skirt', 'bottom', ['orange'], ['evening'], 3),
   ];
   save(); renderAll();
-  toast('Sample wardrobe loaded — explore the tabs.');
+  toast('Sample capsule loaded — explore the tabs.');
 }
 
 /* ================= SETTINGS: MODEL CHOICE + KEYS ================= */
@@ -1242,6 +1286,7 @@ function openSettings() {
   const sel = document.getElementById('f-model');
   sel.innerHTML = MODELS.map(m => `<option value="${m.id}">${m.label}</option>`).join('');
   sel.value = currentModel().id;
+  document.getElementById('f-cap').value = capLimit();
   settingsKeyDraft = {};
   settingsPrevProvider = null;
   modelChanged();
@@ -1267,6 +1312,8 @@ function modelChanged() {
 function saveSettings() {
   const model = MODELS.find(m => m.id === document.getElementById('f-model').value);
   localStorage.setItem(MODEL_LS, model.id);
+  const cap = Math.min(100, Math.max(5, parseInt(document.getElementById('f-cap').value, 10) || 33));
+  localStorage.setItem(CAP_LS, cap);
   settingsKeyDraft[model.provider] = document.getElementById('f-apikey').value.trim();
   for (const [prov, key] of Object.entries(settingsKeyDraft)) {
     if (key) localStorage.setItem(keyLs(prov), key);
@@ -1306,8 +1353,10 @@ const PARSE_SCHEMA = {
       description: 'Every style context this piece genuinely works for' },
     wearsPerWash: { type: 'integer',
       description: 'Typical wears before washing, judged from garment type and fabric. Tops/dresses 1-3, bottoms 3-7, outerwear 10-20, shoes/accessories 20-30' },
+    weightGrams: { type: 'integer',
+      description: 'Estimated weight of the garment in grams, judged from type and fabric. Tee ~180, shirt ~250, jeans ~600, dress ~350, sneakers ~850, coat ~1100, scarf ~120' },
   },
-  required: ['name', 'category', 'colors', 'styles', 'wearsPerWash'],
+  required: ['name', 'category', 'colors', 'styles', 'wearsPerWash', 'weightGrams'],
   additionalProperties: false,
 };
 
@@ -1318,7 +1367,8 @@ const PARSE_PROMPT =
   'context the piece genuinely works in: casual (everyday), smart (office/dinner), sport (workout), ' +
   'beach (hot weather/swim), evening (dressy nights out). ' +
   'wearsPerWash is the typical number of wears before washing: tops/dresses 1-3, bottoms 3-7, ' +
-  'outerwear 10-20, shoes/accessories 20-30.';
+  'outerwear 10-20, shoes/accessories 20-30. ' +
+  'weightGrams is the estimated garment weight in grams (tee ~180, shirt ~250, jeans ~600, dress ~350, sneakers ~850, coat ~1100, scarf ~120).';
 
 /* Gemini uses an OpenAPI-style schema rather than JSON Schema */
 const GEMINI_SCHEMA = {
@@ -1329,8 +1379,9 @@ const GEMINI_SCHEMA = {
     colors: { type: 'ARRAY', items: { type: 'STRING', enum: COLORS.map(c => c.id) } },
     styles: { type: 'ARRAY', items: { type: 'STRING', enum: STYLES } },
     wearsPerWash: { type: 'INTEGER' },
+    weightGrams: { type: 'INTEGER' },
   },
-  required: ['name', 'category', 'colors', 'styles', 'wearsPerWash'],
+  required: ['name', 'category', 'colors', 'styles', 'wearsPerWash', 'weightGrams'],
 };
 
 async function apiError(res, provider) {
@@ -1444,6 +1495,7 @@ function itemFromParse(parsed, photo) {
     colors: (parsed.colors || []).filter(c => colorOf(c)).slice(0, 3),
     styles: (parsed.styles || []).filter(s => STYLES.includes(s)),
     wearsPerWash: Math.min(40, Math.max(1, parsed.wearsPerWash || 2)),
+    weightGrams: Math.min(5000, Math.max(20, parsed.weightGrams || 0)) || null,
     currentWears: 0, wearHistory: [], photo,
     createdAt: new Date().toISOString(),
   };
@@ -1480,6 +1532,7 @@ async function photoPicked(ev) {
     const apiImage = await resizeImage(file, 768, 0.8);
     const parsed = await analyzePhoto(apiImage);
     document.getElementById('f-name').value = parsed.name || '';
+    if (parsed.weightGrams) document.getElementById('f-weight').value = Math.min(5000, Math.max(10, parsed.weightGrams));
     picked.category = CATEGORIES.some(c => c.id === parsed.category) ? parsed.category : picked.category;
     picked.colors = (parsed.colors || []).filter(c => colorOf(c)).slice(0, 3);
     picked.styles = (parsed.styles || []).filter(s => STYLES.includes(s));
@@ -1507,9 +1560,16 @@ function startBulkImport() {
 let bulkRunning = false;
 
 async function bulkImport(ev) {
-  const files = [...ev.target.files];
+  let files = [...ev.target.files];
   ev.target.value = '';
   if (!files.length || bulkRunning) return;
+  const room = capLimit() - state.items.length;
+  if (room <= 0) {
+    toast(`capsule's full — ${capLimit()} pieces max. donate something first.`);
+    return;
+  }
+  let clipped = 0;
+  if (files.length > room) { clipped = files.length - room; files = files.slice(0, room); }
   bulkRunning = true;
   const box = document.getElementById('bulkStatus');
   let done = 0, failed = 0;
@@ -1534,11 +1594,11 @@ async function bulkImport(ev) {
   }
   bulkRunning = false;
   box.innerHTML = `<div class="card" style="margin-bottom:12px">
-    ✓ Added <b>${done}</b> item${done === 1 ? '' : 's'} from your photos${failed ? ` — ${failed} photo${failed === 1 ? '' : 's'} skipped (${esc(failures[0])})` : ''}.
+    ✓ Added <b>${done}</b> piece${done === 1 ? '' : 's'} from your photos${failed ? ` — ${failed} skipped (${esc(failures[0])})` : ''}${clipped ? ` — ${clipped} left out, capsule caps at ${capLimit()}` : ''}.
     <button class="btn small ghost" onclick="document.getElementById('bulkStatus').innerHTML=''" style="margin-left:8px">Dismiss</button>
   </div>`;
   renderAll();
-  toast(done ? `Wardrobe updated — ${generateOutfits().length} outfits possible` : 'No items could be added');
+  toast(done ? `Capsule updated — ${generateOutfits().length} fits possible` : 'No items could be added');
 }
 
 /* ================= DRESS ME ================= */
@@ -1549,7 +1609,7 @@ function dressMe() {
   const outfits = generateOutfits().filter(o => o.core.every(c => wearsLeft(c) > 0));
   const box = document.getElementById('dressMeResult');
   if (!outfits.length) {
-    box.innerHTML = `<div class="empty">No fully clean outfit available — check the Laundry tab.</div>`;
+    box.innerHTML = `<div class="empty">No fully clean fit available — check the laundry tab.</div>`;
     return;
   }
   // score: fewer lifetime wears = better (rotates underused pieces in), small bonus for clean headroom
@@ -1602,7 +1662,7 @@ function renderAll() {
 load();
 buildPickers();
 document.getElementById('marqueeInner').innerHTML = Array(2).fill(
-  '<span>Pack light</span>✳<span>Wear everything</span>✳<span>Wash less</span>✳<span>Buy smart</span>✳<span>Donate the rest</span>✳'
+  '<span>Pack light</span>✳<span>Heavy rotation</span>✳<span>Wash less</span>✳<span>No dead weight</span>✳<span>Cop smart</span>✳'
 ).join('');
 renderAll();
 (function initMotion() {
