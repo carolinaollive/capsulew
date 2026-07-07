@@ -543,6 +543,7 @@
 <div class="modal-bg" id="settingsModalBg" onclick="if(event.target===this) closeSettings()">
   <div class="modal">
     <h2>Settings</h2>
+    <div class="field" id="syncField" style="display:none"></div>
     <div class="field">
       <label>AI model for photo analysis</label>
       <select id="f-model" style="width:100%" onchange="modelChanged()"></select>
@@ -639,7 +640,13 @@ function load() {
     if (!Array.isArray(state.items)) state.items = [];
   } catch (e) { state = { items: [] }; }
 }
-function save() { localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+function save() {
+  localStorage.setItem(LS_KEY, JSON.stringify(state));
+  if (!applyingRemote) {
+    localStorage.setItem('capsulew-updated', new Date().toISOString());
+    scheduleSyncPush();
+  }
+}
 function uid() { return 'i' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 function catOf(item) { return CATEGORIES.find(c => c.id === item.category) || CATEGORIES[0]; }
 function colorOf(id) { return COLORS.find(c => c.id === id); }
@@ -1286,6 +1293,7 @@ let settingsKeyDraft = {};   // unsaved key text per provider while the modal is
 let settingsPrevProvider = null;
 
 function openSettings() {
+  renderSyncUI();
   const sel = document.getElementById('f-model');
   sel.innerHTML = MODELS.map(m => `<option value="${m.id}">${m.label}</option>`).join('');
   sel.value = currentModel().id;
@@ -1687,6 +1695,167 @@ function undoDressMe(ids) {
   toast('Undone');
 }
 
+/* ================= GOOGLE SYNC (Firebase; dormant until configured) ================= */
+
+const FIREBASE_CONFIG = null; /* paste the Firebase web-app config object here to enable Google login */
+
+let fb = { auth: null, db: null, user: null, ready: false };
+let applyingRemote = false;
+let syncPushTimer = null;
+let lastSyncNote = '';
+
+function syncConfigured() { return !!FIREBASE_CONFIG; }
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const el = document.createElement('script');
+    el.src = src; el.onload = resolve; el.onerror = () => reject(new Error('script load failed'));
+    document.head.appendChild(el);
+  });
+}
+
+async function initSync() {
+  if (!syncConfigured() || fb.ready) return;
+  try {
+    const v = '10.14.1';
+    await loadScript(`https://www.gstatic.com/firebasejs/${v}/firebase-app-compat.js`);
+    await Promise.all([
+      loadScript(`https://www.gstatic.com/firebasejs/${v}/firebase-auth-compat.js`),
+      loadScript(`https://www.gstatic.com/firebasejs/${v}/firebase-firestore-compat.js`),
+    ]);
+    firebase.initializeApp(FIREBASE_CONFIG);
+    fb.auth = firebase.auth();
+    fb.db = firebase.firestore();
+    fb.ready = true;
+    fb.auth.onAuthStateChanged(user => {
+      fb.user = user;
+      renderSyncUI();
+      if (user) pullRemote();
+    });
+  } catch (e) {
+    lastSyncNote = 'sync unavailable right now';
+    renderSyncUI();
+  }
+}
+
+async function googleSignIn() {
+  if (!fb.ready) { toast('Sync is still waking up — try again in a second'); return; }
+  const provider = new firebase.auth.GoogleAuthProvider();
+  const standalone = window.matchMedia('(display-mode: standalone)').matches;
+  try {
+    if (standalone) await fb.auth.signInWithRedirect(provider);
+    else await fb.auth.signInWithPopup(provider);
+  } catch (e) {
+    if (e.code === 'auth/popup-blocked' || e.code === 'auth/popup-closed-by-user') {
+      try { await fb.auth.signInWithRedirect(provider); } catch (e2) { toast('Could not open Google sign-in'); }
+    } else {
+      toast('Sign-in failed — try again');
+    }
+  }
+}
+
+async function googleSignOut() {
+  if (fb.auth) await fb.auth.signOut();
+  toast('Signed out — this device keeps its local copy');
+  renderSyncUI();
+}
+
+function scheduleSyncPush() {
+  if (!fb.user) return;
+  clearTimeout(syncPushTimer);
+  syncPushTimer = setTimeout(pushRemote, 2500);
+}
+
+function stripPhotos(items) { return items.map(({ photo, ...rest }) => rest); }
+
+async function pushRemote() {
+  if (!fb.user || !fb.db) return;
+  try {
+    const uid = fb.user.uid;
+    const updatedAt = localStorage.getItem('capsulew-updated') || new Date().toISOString();
+    await fb.db.doc('wardrobes/' + uid).set({
+      updatedAt,
+      data: { items: stripPhotos(state.items) },
+    });
+    const wanted = new Set(state.items.filter(i => i.photo).map(i => i.id));
+    const pushed = new Set(JSON.parse(localStorage.getItem('capsulew-photoids') || '[]'));
+    const batchOps = [];
+    for (const item of state.items) {
+      if (item.photo && !pushed.has(item.id)) {
+        batchOps.push(fb.db.doc(`wardrobes/${uid}/photos/${item.id}`).set({ p: item.photo }));
+      }
+    }
+    for (const oldId of pushed) {
+      if (!wanted.has(oldId)) batchOps.push(fb.db.doc(`wardrobes/${uid}/photos/${oldId}`).delete());
+    }
+    await Promise.all(batchOps);
+    localStorage.setItem('capsulew-photoids', JSON.stringify([...wanted]));
+    lastSyncNote = 'synced just now';
+    renderSyncUI();
+  } catch (e) {
+    lastSyncNote = 'sync failed — will retry on next change';
+    renderSyncUI();
+  }
+}
+
+async function pullRemote() {
+  if (!fb.user || !fb.db) return;
+  try {
+    const uid = fb.user.uid;
+    const snap = await fb.db.doc('wardrobes/' + uid).get();
+    if (!snap.exists) { pushRemote(); return; }
+    const remote = snap.data();
+    const localTime = localStorage.getItem('capsulew-updated') || '';
+    if ((remote.updatedAt || '') > localTime) {
+      const photoSnap = await fb.db.collection(`wardrobes/${uid}/photos`).get();
+      const photos = {};
+      photoSnap.forEach(d => { photos[d.id] = d.data().p; });
+      const items = (remote.data?.items || []).map(i => ({ ...i, photo: photos[i.id] || null }));
+      applyingRemote = true;
+      state = { items };
+      localStorage.setItem(LS_KEY, JSON.stringify(state));
+      localStorage.setItem('capsulew-updated', remote.updatedAt);
+      localStorage.setItem('capsulew-photoids', JSON.stringify(Object.keys(photos)));
+      applyingRemote = false;
+      renderAll();
+      lastSyncNote = 'capsule restored from your Google account';
+      renderSyncUI();
+      toast('Your capsule is back ✳');
+    } else if ((remote.updatedAt || '') < localTime) {
+      pushRemote();
+    } else {
+      lastSyncNote = 'synced';
+      renderSyncUI();
+    }
+  } catch (e) {
+    lastSyncNote = 'could not reach sync';
+    renderSyncUI();
+  }
+}
+
+function renderSyncUI() {
+  const box = document.getElementById('syncField');
+  if (!box) return;
+  if (!syncConfigured()) { box.style.display = 'none'; return; }
+  box.style.display = '';
+  if (fb.user) {
+    box.innerHTML = `
+      <label>Backup & sync</label>
+      <div class="section-note" style="margin:0 0 8px">
+        Signed in as <b>${esc(fb.user.email || fb.user.displayName || 'your Google account')}</b>${lastSyncNote ? ' · ' + esc(lastSyncNote) : ''}.
+        Your capsule follows you to any device you sign in on.
+      </div>
+      <button class="btn small ghost" onclick="googleSignOut()">Sign out</button>`;
+  } else {
+    box.innerHTML = `
+      <label>Backup & sync</label>
+      <div class="section-note" style="margin:0 0 8px">
+        Keep your capsule if you lose your phone — and open it on any device.
+      </div>
+      <button class="btn small primary" onclick="googleSignIn()">Continue with Google</button>`;
+  }
+}
+
 /* ================= BOOT ================= */
 
 function renderAll() {
@@ -1702,6 +1871,7 @@ document.getElementById('marqueeInner').innerHTML = Array(2).fill(
   '<span>Pack light</span>✳<span>Heavy rotation</span>✳<span>Wash less</span>✳<span>No dead weight</span>✳<span>Cop smart</span>✳'
 ).join('');
 renderAll();
+initSync();
 (function initMotion() {
   const tab = document.querySelector('.tab.active');
   if (tab) {
